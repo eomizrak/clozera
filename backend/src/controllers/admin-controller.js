@@ -8,9 +8,20 @@ async function importLanguages(req, res, next) {
   }
 }
 
+async function importLanguagePairs(req, res, next) {
+  try {
+    res.status(201).json({ data: await adminService.importLanguagePairs(req.body.languagePairs || []) })
+  } catch (error) {
+    next(error)
+  }
+}
+
 async function importCollections(req, res, next) {
   try {
-    const result = await adminService.importCollections(req.body)
+    const result = await adminService.importCollections({
+      ...req.body,
+      ownerId: req.user.id,
+    })
 
     if (!result) {
       return res.status(404).json({ error: { code: 'NOT_FOUND' } })
@@ -24,16 +35,8 @@ async function importCollections(req, res, next) {
 
 async function importCollectionSentences(req, res, next) {
   try {
-    const sentences = await adminService.importCollectionSentences(req.params.id, req.body.sentences || [])
+    const sentences = await adminService.importCollectionSentences(req.params.id, req.body.sentences || [], req.user.id)
     res.status(201).json({ data: sentences })
-  } catch (error) {
-    next(error)
-  }
-}
-
-async function seedGermanEnglish(req, res, next) {
-  try {
-    res.status(201).json({ data: await adminService.seedGermanEnglish() })
   } catch (error) {
     next(error)
   }
@@ -41,7 +44,7 @@ async function seedGermanEnglish(req, res, next) {
 
 module.exports = {
   importLanguages,
+  importLanguagePairs,
   importCollections,
   importCollectionSentences,
-  seedGermanEnglish,
 }

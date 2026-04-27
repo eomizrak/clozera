@@ -1,8 +1,11 @@
+const mongoose = require('mongoose')
+
 const Collection = require('../models/collection')
 const CollectionGroup = require('../models/collection-group')
 const CollectionSentence = require('../models/collection-sentence')
 const Language = require('../models/language')
 const LanguagePair = require('../models/language-pair')
+const User = require('../models/user')
 
 function collectionNotFoundError() {
   const error = new Error('Collection not found.')
@@ -11,12 +14,92 @@ function collectionNotFoundError() {
   return error
 }
 
+function languageNotFoundError(identifier) {
+  const error = new Error(`Language not found: ${identifier}`)
+  error.status = 404
+  error.code = 'LANGUAGE_NOT_FOUND'
+  return error
+}
+
+function ownerRequiredError() {
+  const error = new Error('Owner id is required for content imports.')
+  error.status = 400
+  error.code = 'OWNER_REQUIRED'
+  return error
+}
+
+function ownerNotFoundError(ownerId) {
+  const error = new Error(`Owner not found: ${ownerId}`)
+  error.status = 404
+  error.code = 'OWNER_NOT_FOUND'
+  return error
+}
+
+async function resolveImportOwner(ownerId) {
+  if (!ownerId) {
+    throw ownerRequiredError()
+  }
+
+  if (!mongoose.isValidObjectId(ownerId)) {
+    throw ownerNotFoundError(ownerId)
+  }
+
+  const user = await User.findById(ownerId)
+
+  if (!user) {
+    throw ownerNotFoundError(ownerId)
+  }
+
+  return user
+}
+
 async function importLanguages(languages = []) {
   return Language.insertMany(languages, { ordered: false })
 }
 
-async function importCollections({ languagePairSlug, groups = [], collections = [] }) {
-  const pair = await LanguagePair.findOne({ slug: languagePairSlug })
+async function findLanguage(identifier) {
+  return Language.findOne({ $or: [{ iso3: identifier }, { code: identifier }] })
+}
+
+async function importLanguagePairs(languagePairs = []) {
+  const createdPairs = []
+
+  for (const pair of languagePairs) {
+    const targetLanguageIdentifier = pair.targetLanguageIso3 || pair.targetLanguageCode
+    const baseLanguageIdentifier = pair.baseLanguageIso3 || pair.baseLanguageCode
+    const [targetLanguage, baseLanguage] = await Promise.all([
+      findLanguage(targetLanguageIdentifier),
+      findLanguage(baseLanguageIdentifier),
+    ])
+
+    if (!targetLanguage) {
+      throw languageNotFoundError(targetLanguageIdentifier)
+    }
+
+    if (!baseLanguage) {
+      throw languageNotFoundError(baseLanguageIdentifier)
+    }
+
+    createdPairs.push(
+      await LanguagePair.create({
+        slug: pair.slug,
+        targetLanguage: targetLanguage._id,
+        baseLanguage: baseLanguage._id,
+        name: pair.name,
+        active: pair.active ?? true,
+        totalSentences: pair.totalSentences || 0,
+      })
+    )
+  }
+
+  return createdPairs
+}
+
+async function importCollections({ languagePairSlug, ownerId, groups = [], collections = [] }) {
+  const [pair, owner] = await Promise.all([
+    LanguagePair.findOne({ slug: languagePairSlug }),
+    resolveImportOwner(ownerId),
+  ])
 
   if (!pair) {
     return null
@@ -31,11 +114,14 @@ async function importCollections({ languagePairSlug, groups = [], collections = 
   const createdCollections = []
 
   for (const collection of collections) {
+    const { groupType, ...collectionFields } = collection
+
     createdCollections.push(
       await Collection.create({
-        ...collection,
+        ...collectionFields,
+        owner: owner._id,
         languagePair: pair._id,
-        group: collection.groupType ? groupByType.get(collection.groupType) : null,
+        group: groupType ? groupByType.get(groupType) : null,
       })
     )
   }
@@ -46,8 +132,8 @@ async function importCollections({ languagePairSlug, groups = [], collections = 
   }
 }
 
-async function importCollectionSentences(collectionId, sentences = []) {
-  const collection = await Collection.findById(collectionId)
+async function importCollectionSentences(collectionId, sentences = [], ownerId) {
+  const [collection, owner] = await Promise.all([Collection.findById(collectionId), resolveImportOwner(ownerId)])
 
   if (!collection) {
     throw collectionNotFoundError()
@@ -56,6 +142,7 @@ async function importCollectionSentences(collectionId, sentences = []) {
   const createdSentences = await CollectionSentence.insertMany(
     sentences.map((sentence, index) => ({
       ...sentence,
+      owner: owner._id,
       collection: collectionId,
       order: sentence.order ?? index,
     }))
@@ -67,115 +154,9 @@ async function importCollectionSentences(collectionId, sentences = []) {
   return createdSentences
 }
 
-async function seedGermanEnglish() {
-  const [german, english] = await Promise.all([
-    Language.findOneAndUpdate(
-      { iso3: 'deu' },
-      {
-        code: 'de',
-        iso3: 'deu',
-        name: 'German',
-        nativeName: 'Deutsch',
-        flagIso: 'de',
-        ttsLocale: 'de-DE',
-      },
-      { upsert: true, returnDocument: 'after' }
-    ),
-    Language.findOneAndUpdate(
-      { iso3: 'eng' },
-      {
-        code: 'en',
-        iso3: 'eng',
-        name: 'English',
-        nativeName: 'English',
-        flagIso: 'gb',
-        ttsLocale: 'en-US',
-      },
-      { upsert: true, returnDocument: 'after' }
-    ),
-  ])
-
-  const pair = await LanguagePair.findOneAndUpdate(
-    { slug: 'deu-eng' },
-    {
-      slug: 'deu-eng',
-      targetLanguage: german._id,
-      baseLanguage: english._id,
-      name: 'German from English',
-      active: true,
-    },
-    { upsert: true, returnDocument: 'after' }
-  )
-
-  const group = await CollectionGroup.findOneAndUpdate(
-    { languagePair: pair._id, type: 'fast_track' },
-    {
-      languagePair: pair._id,
-      name: 'Fluency Fast Track',
-      type: 'fast_track',
-      description: 'Starter sentences for the first MVP loop.',
-      order: 1,
-    },
-    { upsert: true, returnDocument: 'after' }
-  )
-
-  const collection = await Collection.findOneAndUpdate(
-    { languagePair: pair._id, slug: 'fast-track-level-1' },
-    {
-      languagePair: pair._id,
-      group: group._id,
-      name: 'Fast Track Level 1',
-      slug: 'fast-track-level-1',
-      description: 'A tiny starter set for validating play and review.',
-      type: 'fast_track',
-      level: 'A1',
-      order: 1,
-    },
-    { upsert: true, returnDocument: 'after' }
-  )
-
-  const seedSentences = [
-    {
-      text: 'Wer {{weiss}}?',
-      translation: 'Who knows?',
-      cloze: 'weiss',
-      alternativeAnswers: ['weiss', 'weiß'],
-      multipleChoiceOptions: ['spricht', 'weiss', 'spielt', 'kocht'],
-    },
-    {
-      text: 'Ich {{bin}} hier.',
-      translation: 'I am here.',
-      cloze: 'bin',
-      alternativeAnswers: [],
-      multipleChoiceOptions: ['bist', 'bin', 'ist', 'sind'],
-    },
-    {
-      text: 'Das ist {{gut}}.',
-      translation: 'That is good.',
-      cloze: 'gut',
-      alternativeAnswers: [],
-      multipleChoiceOptions: ['gut', 'gross', 'klein', 'rot'],
-    },
-  ]
-
-  await CollectionSentence.deleteMany({ collection: collection._id })
-  await CollectionSentence.insertMany(
-    seedSentences.map((sentence, index) => ({
-      ...sentence,
-      collection: collection._id,
-      order: index + 1,
-    }))
-  )
-
-  collection.sentenceCount = seedSentences.length
-  await collection.save()
-
-  return { pair, group, collection }
-}
-
 module.exports = {
   importCollectionSentences,
   importCollections,
+  importLanguagePairs,
   importLanguages,
-  seedGermanEnglish,
 }
