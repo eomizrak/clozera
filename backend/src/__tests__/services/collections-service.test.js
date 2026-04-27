@@ -1,17 +1,21 @@
 const mockCollectionFind = jest.fn()
 const mockCollectionFindOne = jest.fn()
+const mockCollectionCreate = jest.fn()
 const mockCollectionSentenceCountDocuments = jest.fn()
+const mockCollectionSentenceCreate = jest.fn()
 const mockCollectionSentenceFind = jest.fn()
 const mockLanguagePairFindOne = jest.fn()
 const mockResolveActiveLanguagePair = jest.fn()
 
 jest.mock('../../models/collection', () => ({
+  create: mockCollectionCreate,
   find: mockCollectionFind,
   findOne: mockCollectionFindOne,
 }))
 
 jest.mock('../../models/collection-sentence', () => ({
   countDocuments: mockCollectionSentenceCountDocuments,
+  create: mockCollectionSentenceCreate,
   find: mockCollectionSentenceFind,
 }))
 
@@ -151,5 +155,124 @@ describe('collections service', () => {
     expect(sort).toHaveBeenCalledWith({ order: 1 })
     expect(skip).toHaveBeenCalledWith(10)
     expect(limit).toHaveBeenCalledWith(10)
+  })
+
+  it('creates a private user collection for a language pair', async () => {
+    const pair = { _id: 'pair-id' }
+    const createdCollection = { id: 'collection-id', name: 'My Phrases' }
+    mockLanguagePairFindOne.mockResolvedValue(pair)
+    mockCollectionFindOne.mockResolvedValue(null)
+    mockCollectionCreate.mockResolvedValue(createdCollection)
+
+    await expect(
+      collectionsService.createCollection(
+        {
+          languagePairSlug: 'deu-eng',
+          name: 'My Phrases',
+          description: 'Useful phrases',
+        },
+        { id: 'user-id' }
+      )
+    ).resolves.toEqual(createdCollection)
+
+    expect(mockLanguagePairFindOne).toHaveBeenCalledWith({ slug: 'deu-eng', active: true })
+    expect(mockCollectionCreate).toHaveBeenCalledWith({
+      owner: 'user-id',
+      languagePair: 'pair-id',
+      name: 'My Phrases',
+      slug: 'my-phrases',
+      description: 'Useful phrases',
+      type: 'topic',
+      level: '',
+      isOfficial: false,
+      isPublic: false,
+      order: 0,
+    })
+  })
+
+  it('adds a numeric suffix when a collection slug already exists for the language pair', async () => {
+    const pair = { _id: 'pair-id' }
+    const createdCollection = { id: 'collection-id', name: 'Travel Phrases', slug: 'travel-phrases-2' }
+    mockLanguagePairFindOne.mockResolvedValue(pair)
+    mockCollectionFindOne.mockResolvedValueOnce({ _id: 'existing-collection-id' }).mockResolvedValueOnce(null)
+    mockCollectionCreate.mockResolvedValue(createdCollection)
+
+    await expect(
+      collectionsService.createCollection(
+        {
+          languagePairSlug: 'deu-eng',
+          name: 'Travel Phrases',
+        },
+        { id: 'user-id' }
+      )
+    ).resolves.toEqual(createdCollection)
+
+    expect(mockCollectionFindOne).toHaveBeenNthCalledWith(1, {
+      languagePair: 'pair-id',
+      slug: 'travel-phrases',
+    })
+    expect(mockCollectionFindOne).toHaveBeenNthCalledWith(2, {
+      languagePair: 'pair-id',
+      slug: 'travel-phrases-2',
+    })
+    expect(mockCollectionCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        slug: 'travel-phrases-2',
+      })
+    )
+  })
+
+  it('adds a sentence to an owned collection and updates the sentence count', async () => {
+    const collection = {
+      _id: 'collection-id',
+      sentenceCount: 2,
+      save: jest.fn().mockResolvedValue(undefined),
+    }
+    const createdSentence = {
+      id: 'sentence-id',
+      text: 'Ich {{lerne}}.',
+      translation: 'I learn.',
+      cloze: 'lerne',
+      alternativeAnswers: [],
+      multipleChoiceOptions: [],
+      hint: '',
+      notes: '',
+    }
+    mockCollectionFindOne.mockResolvedValue(collection)
+    mockCollectionSentenceCreate.mockResolvedValue(createdSentence)
+    mockCollectionSentenceCountDocuments.mockResolvedValue(3)
+
+    await expect(
+      collectionsService.createSentence(
+        'collection-id',
+        {
+          text: 'Ich {{lerne}}.',
+          translation: 'I learn.',
+          cloze: 'lerne',
+        },
+        { id: 'user-id' }
+      )
+    ).resolves.toMatchObject({
+      id: 'sentence-id',
+      text: 'Ich {{lerne}}.',
+      translation: 'I learn.',
+      cloze: 'lerne',
+    })
+
+    expect(mockCollectionFindOne).toHaveBeenCalledWith({ _id: 'collection-id', owner: 'user-id' })
+    expect(mockCollectionSentenceCreate).toHaveBeenCalledWith({
+      owner: 'user-id',
+      collection: 'collection-id',
+      text: 'Ich {{lerne}}.',
+      translation: 'I learn.',
+      cloze: 'lerne',
+      alternativeAnswers: [],
+      multipleChoiceOptions: [],
+      hint: '',
+      notes: '',
+      order: 2,
+    })
+    expect(collection.sentenceCount).toBe(3)
+    expect(collection.save).toHaveBeenCalled()
   })
 })

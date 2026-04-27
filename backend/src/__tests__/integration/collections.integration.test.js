@@ -178,4 +178,122 @@ describe('collections integration', () => {
     })
     expect(response.body.data.collections[0]).not.toHaveProperty('numReadyForReview')
   })
+
+  it('creates a user collection for a language pair', async () => {
+    await seedCollection()
+    const { agent, user } = await loginAs(app, {
+      username: 'ada',
+      email: 'ada@example.com',
+    })
+
+    const response = await agent.post('/collections').send({
+      languagePairSlug: 'deu-eng',
+      name: 'Travel Phrases',
+      description: 'Things I want to remember',
+      isPublic: false,
+    })
+
+    expect(response.status).toBe(201)
+    expect(response.body.data).toMatchObject({
+      name: 'Travel Phrases',
+      slug: 'travel-phrases',
+      description: 'Things I want to remember',
+      isOfficial: false,
+      isPublic: false,
+    })
+
+    const collection = await Collection.findById(response.body.data._id)
+    expect(String(collection.owner)).toBe(String(user._id))
+  })
+
+  it('creates a unique slug when another collection already uses the generated slug', async () => {
+    await seedCollection()
+    const { agent: firstAgent } = await loginAs(app, {
+      username: 'ada',
+      email: 'ada@example.com',
+    })
+    const { agent: secondAgent } = await loginAs(app, {
+      username: 'grace',
+      email: 'grace@example.com',
+    })
+
+    const firstResponse = await firstAgent.post('/collections').send({
+      languagePairSlug: 'deu-eng',
+      name: 'Travel Phrases',
+    })
+    const secondResponse = await secondAgent.post('/collections').send({
+      languagePairSlug: 'deu-eng',
+      name: 'Travel Phrases',
+    })
+
+    expect(firstResponse.status).toBe(201)
+    expect(secondResponse.status).toBe(201)
+    expect(firstResponse.body.data.slug).toBe('travel-phrases')
+    expect(secondResponse.body.data.slug).toBe('travel-phrases-2')
+  })
+
+  it('adds a sentence to an owned user collection', async () => {
+    const { pair } = await seedCollection()
+    const { agent, user } = await loginAs(app, {
+      username: 'ada',
+      email: 'ada@example.com',
+    })
+    const collection = await Collection.create({
+      owner: user._id,
+      languagePair: pair._id,
+      name: 'My Practice',
+      slug: 'my-practice',
+      isOfficial: false,
+      isPublic: false,
+    })
+
+    const response = await agent.post(`/collections/${collection._id}/sentences`).send({
+      text: 'Ich {{reise}} morgen.',
+      translation: 'I travel tomorrow.',
+      cloze: 'reise',
+      alternativeAnswers: ['reise'],
+      multipleChoiceOptions: ['reise', 'schlafe', 'koche'],
+      hint: 'verb',
+    })
+
+    expect(response.status).toBe(201)
+    expect(response.body.data).toMatchObject({
+      text: 'Ich {{reise}} morgen.',
+      translation: 'I travel tomorrow.',
+      cloze: 'reise',
+      hint: 'verb',
+    })
+
+    const updatedCollection = await Collection.findById(collection._id)
+    expect(updatedCollection.sentenceCount).toBe(1)
+  })
+
+  it('does not allow adding a sentence to another user collection', async () => {
+    const { pair } = await seedCollection()
+    const { user: owner } = await loginAs(app, {
+      username: 'owner',
+      email: 'owner@example.com',
+    })
+    const { agent } = await loginAs(app, {
+      username: 'ada',
+      email: 'ada@example.com',
+    })
+    const collection = await Collection.create({
+      owner: owner._id,
+      languagePair: pair._id,
+      name: 'Owner Practice',
+      slug: 'owner-practice',
+      isOfficial: false,
+      isPublic: true,
+    })
+
+    const response = await agent.post(`/collections/${collection._id}/sentences`).send({
+      text: 'Ich {{reise}} morgen.',
+      translation: 'I travel tomorrow.',
+      cloze: 'reise',
+    })
+
+    expect(response.status).toBe(403)
+    expect(response.body.error.code).toBe('FORBIDDEN')
+  })
 })
