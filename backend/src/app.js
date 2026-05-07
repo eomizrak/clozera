@@ -20,6 +20,7 @@ require('dotenv').config(dotenvOptions)
 require('./database-connection')
 
 const accountsRouter = require('./routes/accounts')
+const adminRouter = require('./routes/admin')
 const collectionsRouter = require('./routes/collections')
 const languagesRouter = require('./routes/languages')
 const usersRouter = require('./routes/users')
@@ -85,6 +86,7 @@ app.use('/accounts', accountsRouter)
 app.use(languagesRouter)
 app.use(usersRouter)
 app.use(collectionsRouter)
+app.use(adminRouter)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
