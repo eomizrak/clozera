@@ -172,7 +172,7 @@ describe('admin integration', () => {
         {
           text: 'Wer {{weiss}}?',
           translation: 'Who knows?',
-          cloze: 'weiss',
+          cloze: 'wrong',
           alternativeAnswers: ['weiss'],
           multipleChoiceOptions: ['spricht', 'weiss', 'spielt', 'kocht'],
         },
@@ -200,7 +200,9 @@ describe('admin integration', () => {
     expect(await Collection.countDocuments()).toBe(1)
     expect(await CollectionSentence.countDocuments()).toBe(3)
     expect(String((await Collection.findById(collectionId)).owner)).toBe(String(user._id))
-    expect(String((await CollectionSentence.findOne({ collection: collectionId })).owner)).toBe(String(user._id))
+    const importedSentence = await CollectionSentence.findOne({ collection: collectionId, text: 'Wer {{weiss}}?' })
+    expect(String(importedSentence.owner)).toBe(String(user._id))
+    expect(importedSentence.cloze).toBe('weiss')
   })
 
   it('rejects language pair imports when a referenced language is missing', async () => {
@@ -246,6 +248,53 @@ describe('admin integration', () => {
 
     expect(response.status).toBe(404)
     expect(response.body.error.code).toBe('NOT_FOUND')
+    expect(await CollectionSentence.countDocuments()).toBe(0)
+  })
+
+  it('rejects sentence imports with invalid cloze markers', async () => {
+    const { agent, user } = await loginAs(app, {
+      username: 'admin',
+      email: 'admin@example.com',
+      role: 'admin',
+    })
+    const language = await Language.create({
+      name: 'German',
+      nativeName: 'Deutsch',
+      code: 'de',
+      iso3: 'deu',
+      flagIso: 'de',
+    })
+    const baseLanguage = await Language.create({
+      name: 'English',
+      nativeName: 'English',
+      code: 'en',
+      iso3: 'eng',
+      flagIso: 'gb',
+    })
+    const pair = await LanguagePair.create({
+      targetLanguage: language._id,
+      baseLanguage: baseLanguage._id,
+      name: 'German from English',
+      slug: 'deu-eng',
+    })
+    const collection = await Collection.create({
+      owner: user._id,
+      languagePair: pair._id,
+      name: 'Fast Track Level 1',
+      slug: 'fast-track-level-1',
+    })
+
+    const response = await agent.post(`/admin/collections/${collection._id}/sentences/import`).send({
+      sentences: [
+        {
+          text: 'Ich {{bin}} {{hier}}.',
+          translation: 'I am here.',
+        },
+      ],
+    })
+
+    expect(response.status).toBe(400)
+    expect(response.body.error.code).toBe('VALIDATION_ERROR')
     expect(await CollectionSentence.countDocuments()).toBe(0)
   })
 })

@@ -25,6 +25,8 @@ function serializeLanguagePair(pair) {
 function serializeUser(user) {
   if (!user) return null
 
+  const languagePairs = Array.isArray(user.languagePairs) ? user.languagePairs.map(serializeLanguagePair) : []
+
   return {
     id: user.id,
     name: user.name,
@@ -32,6 +34,7 @@ function serializeUser(user) {
     email: user.email,
     role: user.role,
     selectedLanguagePair: serializeLanguagePair(user.selectedLanguagePair),
+    languagePairs,
     timezone: user.timezone,
   }
 }
@@ -48,7 +51,7 @@ async function registerUser({ name, username, email, password, timezone }) {
 }
 
 async function getCurrentUser(userId) {
-  return User.findById(userId).populate('selectedLanguagePair')
+  return User.findById(userId).populate('selectedLanguagePair').populate('languagePairs')
 }
 
 async function updateCurrentUser(userId, payload = {}) {
@@ -74,11 +77,12 @@ async function updateCurrentUser(userId, payload = {}) {
     }
 
     updates.selectedLanguagePair = pair._id
+    updates.$addToSet = { languagePairs: pair._id }
   }
 
-  return User.findByIdAndUpdate(userId, updates, { returnDocument: 'after', runValidators: true }).populate(
-    'selectedLanguagePair'
-  )
+  return User.findByIdAndUpdate(userId, updates, { returnDocument: 'after', runValidators: true })
+    .populate('selectedLanguagePair')
+    .populate('languagePairs')
 }
 
 module.exports = {

@@ -21,6 +21,25 @@ const userSchema = new mongoose.Schema(
       ref: 'LanguagePair',
       default: null,
     },
+    languagePairs: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'LanguagePair',
+        },
+      ],
+      default: [],
+    },
+    pinnedCollections: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Collection',
+        },
+      ],
+      default: [],
+      index: true,
+    },
     role: {
       type: String,
       enum: ['user', 'admin'],

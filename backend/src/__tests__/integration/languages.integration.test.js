@@ -89,6 +89,31 @@ describe('languages integration', () => {
       slug: 'deu-eng',
     })
     expect(response.body.data.selectedLanguagePair.id).toBe(String(pair._id))
+    expect(response.body.data.languagePairs).toHaveLength(1)
+    expect(response.body.data.languagePairs[0]).toMatchObject({
+      id: String(pair._id),
+      slug: 'deu-eng',
+    })
+  })
+
+  it('does not duplicate a language pair when selected more than once', async () => {
+    const { pair } = await seedLanguagePair()
+    const { agent } = await loginAs(app, {
+      username: 'ada',
+      email: 'ada@example.com',
+    })
+
+    await agent.patch('/users/me').send({
+      selectedLanguagePairSlug: 'deu-eng',
+    })
+    const response = await agent.patch('/users/me').send({
+      selectedLanguagePairSlug: 'deu-eng',
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.body.data.selectedLanguagePair.id).toBe(String(pair._id))
+    expect(response.body.data.languagePairs).toHaveLength(1)
+    expect(response.body.data.languagePairs[0].id).toBe(String(pair._id))
   })
 
   it('rejects current user update when the user is not authenticated', async () => {
@@ -116,5 +141,4 @@ describe('languages integration', () => {
     expect(response.status).toBe(404)
     expect(response.body.error.code).toBe('LANGUAGE_PAIR_NOT_FOUND')
   })
-
 })

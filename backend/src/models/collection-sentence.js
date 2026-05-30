@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { extractClozeFromText } = require('../lib/sentence-authoring')
 
 const collectionSentenceSchema = new mongoose.Schema(
   {
@@ -28,5 +29,31 @@ const collectionSentenceSchema = new mongoose.Schema(
 
 collectionSentenceSchema.index({ collection: 1, order: 1 })
 collectionSentenceSchema.index({ collection: 1, cloze: 1 })
+
+collectionSentenceSchema.statics.extractClozeFromText = extractClozeFromText
+
+collectionSentenceSchema.pre('validate', function syncClozeFromText() {
+  if (this.isModified('text') || !this.cloze) {
+    this.cloze = extractClozeFromText(this.text)
+  }
+})
+
+function clozeSyncedUpdate(update) {
+  if (!update) return update
+
+  if (update.text) {
+    update.cloze = extractClozeFromText(update.text)
+  }
+
+  if (update.$set?.text) {
+    update.$set.cloze = extractClozeFromText(update.$set.text)
+  }
+
+  return update
+}
+
+collectionSentenceSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], function syncUpdatedCloze() {
+  this.setUpdate(clozeSyncedUpdate(this.getUpdate()))
+})
 
 module.exports = mongoose.model('CollectionSentence', collectionSentenceSchema)

@@ -16,9 +16,15 @@ function login(req, res, next) {
       })
     }
 
-    return req.login(user, loginError => {
+    return req.login(user, async loginError => {
       if (loginError) return next(loginError)
-      return res.json({ data: accountsService.serializeUser(user) })
+
+      try {
+        const currentUser = await usersService.getCurrentUser(user.id)
+        return res.json({ data: accountsService.serializeUser(currentUser) })
+      } catch (currentUserError) {
+        return next(currentUserError)
+      }
     })
   })(req, res, next)
 }

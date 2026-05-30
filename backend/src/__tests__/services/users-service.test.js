@@ -43,20 +43,23 @@ describe('users service', () => {
     })
   })
 
-  it('gets the current user with selected language pair populated', async () => {
+  it('gets the current user with selected and saved language pairs populated', async () => {
     const user = { id: 'user-id' }
-    const populate = jest.fn().mockResolvedValue(user)
+    const secondPopulate = jest.fn().mockResolvedValue(user)
+    const populate = jest.fn().mockReturnValue({ populate: secondPopulate })
     mockFindById.mockReturnValue({ populate })
 
     await expect(usersService.getCurrentUser('user-id')).resolves.toBe(user)
 
     expect(mockFindById).toHaveBeenCalledWith('user-id')
     expect(populate).toHaveBeenCalledWith('selectedLanguagePair')
+    expect(secondPopulate).toHaveBeenCalledWith('languagePairs')
   })
 
   it('updates current user profile fields', async () => {
     const updatedUser = { id: 'user-id', name: 'Ada L.', username: 'ada', timezone: 'Europe/Berlin' }
-    const populate = jest.fn().mockResolvedValue(updatedUser)
+    const secondPopulate = jest.fn().mockResolvedValue(updatedUser)
+    const populate = jest.fn().mockReturnValue({ populate: secondPopulate })
     mockFindByIdAndUpdate.mockReturnValue({ populate })
 
     await expect(
@@ -77,13 +80,15 @@ describe('users service', () => {
       { returnDocument: 'after', runValidators: true }
     )
     expect(populate).toHaveBeenCalledWith('selectedLanguagePair')
+    expect(secondPopulate).toHaveBeenCalledWith('languagePairs')
   })
 
-  it('updates selected language pair by slug', async () => {
+  it('updates selected language pair by slug and saves it without duplicates', async () => {
     const pair = { _id: 'pair-id', slug: 'deu-eng' }
     const updatedUser = { id: 'user-id', selectedLanguagePair: pair }
     mockLanguagePairFindOne.mockResolvedValue(pair)
-    const populate = jest.fn().mockResolvedValue(updatedUser)
+    const secondPopulate = jest.fn().mockResolvedValue(updatedUser)
+    const populate = jest.fn().mockReturnValue({ populate: secondPopulate })
     mockFindByIdAndUpdate.mockReturnValue({ populate })
 
     await expect(usersService.updateCurrentUser('user-id', { selectedLanguagePairSlug: 'deu-eng' })).resolves.toBe(
@@ -93,21 +98,25 @@ describe('users service', () => {
     expect(mockLanguagePairFindOne).toHaveBeenCalledWith({ slug: 'deu-eng', active: true })
     expect(mockFindByIdAndUpdate).toHaveBeenCalledWith(
       'user-id',
-      { selectedLanguagePair: 'pair-id' },
+      {
+        selectedLanguagePair: 'pair-id',
+        $addToSet: { languagePairs: 'pair-id' },
+      },
       { returnDocument: 'after', runValidators: true }
     )
     expect(populate).toHaveBeenCalledWith('selectedLanguagePair')
+    expect(secondPopulate).toHaveBeenCalledWith('languagePairs')
   })
 
   it('throws a typed error when selected language pair is missing', async () => {
     mockLanguagePairFindOne.mockResolvedValue(null)
 
-    await expect(usersService.updateCurrentUser('user-id', { selectedLanguagePairSlug: 'missing' })).rejects.toMatchObject(
-      {
-        code: 'LANGUAGE_PAIR_NOT_FOUND',
-        status: 404,
-      }
-    )
+    await expect(
+      usersService.updateCurrentUser('user-id', { selectedLanguagePairSlug: 'missing' })
+    ).rejects.toMatchObject({
+      code: 'LANGUAGE_PAIR_NOT_FOUND',
+      status: 404,
+    })
 
     expect(mockFindByIdAndUpdate).not.toHaveBeenCalled()
   })

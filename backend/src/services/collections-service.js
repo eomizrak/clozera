@@ -1,7 +1,18 @@
 const Collection = require('../models/collection')
 const CollectionSentence = require('../models/collection-sentence')
 const LanguagePair = require('../models/language-pair')
+const User = require('../models/user')
 const { resolveActiveLanguagePair } = require('../lib/active-language-pair')
+const {
+  collectionAccessConditions,
+  collectionCapabilities,
+  collectionRelationship,
+  isCollectionPinned,
+  pinnedCollectionIds,
+  userId,
+  userWithPinnedCollection,
+} = require('../lib/collection-capabilities')
+const { normalizeSentencePayload } = require('../lib/sentence-authoring')
 
 function collectionNotFoundError() {
   const error = new Error('Collection not found.')
@@ -24,21 +35,18 @@ function collectionOwnershipError() {
   return error
 }
 
+function invalidVisibilityError() {
+  return validationError('Visibility must be public or private.', [
+    { field: 'visibility', message: 'Visibility must be public or private.' },
+  ])
+}
+
 function validationError(message, details = []) {
   const error = new Error(message)
   error.status = 400
   error.code = 'VALIDATION_ERROR'
   error.details = details
   return error
-}
-
-function userId(user) {
-  return user?._id || user?.id
-}
-
-function collectionAccessConditions(user) {
-  const id = userId(user)
-  return id ? [{ isPublic: true }, { owner: id }] : [{ isPublic: true }]
 }
 
 function serializeLanguagePair(pair) {
@@ -55,12 +63,31 @@ function serializeLanguagePair(pair) {
   }
 }
 
-function serializeCollection(collection, user) {
-  const id = userId(user)
-  const owner = collection.owner?._id || collection.owner
-  const isOwned = id && String(owner) === String(id)
+function serializeCollectionGroup(group) {
+  if (!group) return null
 
   return {
+    id: group.id,
+    name: group.name,
+    type: group.type,
+    description: group.description,
+    order: group.order,
+  }
+}
+
+function serializeCreator(owner) {
+  if (!owner || !owner.id) return null
+
+  return {
+    id: owner.id,
+    displayName: owner.name || owner.username,
+  }
+}
+
+function serializeCollection(collection, user) {
+  const relationship = collectionRelationship(collection, user)
+
+  const serialized = {
     id: collection.id,
     name: collection.name,
     slug: collection.slug,
@@ -70,9 +97,22 @@ function serializeCollection(collection, user) {
     sentenceCount: collection.sentenceCount,
     isOfficial: collection.isOfficial,
     isPublic: collection.isPublic,
-    ownership: collection.isOfficial ? 'official' : isOwned ? 'owned' : 'public',
+    relationship,
+    visibility: collection.isPublic ? 'public' : 'private',
+    isPinned: isCollectionPinned(collection, user),
+    capabilities: collectionCapabilities(collection, user),
     languagePair: serializeLanguagePair(collection.languagePair),
   }
+
+  if (collection.group) {
+    serialized.group = serializeCollectionGroup(collection.group)
+  }
+
+  if (relationship === 'community') {
+    serialized.creator = serializeCreator(collection.owner)
+  }
+
+  return serialized
 }
 
 function accessibleCollectionFilter(collectionId, user) {
@@ -119,17 +159,43 @@ async function listCollections({ languagePair, owner, page = 1, perPage = 20, us
 
   const [total, collections] = await Promise.all([
     Collection.countDocuments(filters),
-    Collection.find(filters).populate('languagePair').sort({ order: 1 }).skip(skip).limit(normalizedPerPage),
+    Collection.find(filters)
+      .populate(['languagePair', 'group', 'owner'])
+      .sort({ order: 1 })
+      .skip(skip)
+      .limit(normalizedPerPage),
   ])
 
+  const sortedCollections = [...collections]
+    .sort((left, right) => {
+      const leftGroupOrder = left.group?.order ?? Number.MAX_SAFE_INTEGER
+      const rightGroupOrder = right.group?.order ?? Number.MAX_SAFE_INTEGER
+
+      if (leftGroupOrder !== rightGroupOrder) {
+        return leftGroupOrder - rightGroupOrder
+      }
+
+      return (left.order ?? 0) - (right.order ?? 0)
+    })
+
   return {
-    collections: collections.map(collection => serializeCollection(collection, user)),
+    collections: sortedCollections.map(collection => serializeCollection(collection, user)),
     meta: {
       total,
       page: normalizedPage,
       perPage: normalizedPerPage,
     },
   }
+}
+
+async function getCollectionDocument(id, user) {
+  const collection = await Collection.findOne(accessibleCollectionFilter(id, user))
+
+  if (!collection) {
+    throw collectionNotFoundError()
+  }
+
+  return collection
 }
 
 async function getCollection(id, user) {
@@ -139,7 +205,11 @@ async function getCollection(id, user) {
     throw collectionNotFoundError()
   }
 
-  return collection
+  if (collection.populate) {
+    await collection.populate(['languagePair', 'group', 'owner'])
+  }
+
+  return serializeCollection(collection, user)
 }
 
 function buildSentenceQuery({ collectionId, query, context }) {
@@ -185,7 +255,7 @@ async function createCollection(payload, user) {
 
   const slug = await uniqueCollectionSlug(pair._id, baseSlug)
 
-  return Collection.create({
+  const collection = await Collection.create({
     owner: id,
     languagePair: pair._id,
     name,
@@ -197,6 +267,12 @@ async function createCollection(payload, user) {
     isPublic: payload.isPublic ?? false,
     order: payload.order || 0,
   })
+
+  await User.findByIdAndUpdate(id, { $addToSet: { pinnedCollections: collection._id } })
+
+  collection.languagePair = pair
+
+  return serializeCollection(collection, userWithPinnedCollection(user, collection._id))
 }
 
 async function uniqueCollectionSlug(languagePairId, baseSlug) {
@@ -212,12 +288,12 @@ async function uniqueCollectionSlug(languagePairId, baseSlug) {
 }
 
 async function ensureOwnedCollection(collectionId, user) {
-  const collection = await Collection.findOne({ _id: collectionId, owner: userId(user) })
+  const collection = await Collection.findOne({ _id: collectionId, owner: userId(user), isOfficial: false })
 
   if (!collection) {
-    const accessibleCollection = await Collection.findOne(accessibleCollectionFilter(collectionId, user))
+    const existingCollection = await Collection.findOne({ _id: collectionId })
 
-    if (accessibleCollection) {
+    if (existingCollection) {
       throw collectionOwnershipError()
     }
 
@@ -227,16 +303,142 @@ async function ensureOwnedCollection(collectionId, user) {
   return collection
 }
 
+async function updateCollection(collectionId, payload, user) {
+  const collection = await ensureOwnedCollection(collectionId, user)
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'name')) {
+    const name = String(payload.name || '').trim()
+
+    if (!name) {
+      throw validationError('Collection name is required.', [
+        { field: 'name', message: 'Collection name is required.' },
+      ])
+    }
+
+    collection.name = name
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'description')) {
+    collection.description = String(payload.description || '').trim()
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'isPublic')) {
+    collection.isPublic = Boolean(payload.isPublic)
+  }
+
+  if (Object.prototype.hasOwnProperty.call(payload, 'visibility')) {
+    if (!['public', 'private'].includes(payload.visibility)) {
+      throw invalidVisibilityError()
+    }
+
+    collection.isPublic = payload.visibility === 'public'
+  }
+
+  await collection.save()
+  await collection.populate(['languagePair', 'group', 'owner'])
+
+  return serializeCollection(collection, user)
+}
+
+async function deleteCollection(collectionId, user) {
+  const collection = await ensureOwnedCollection(collectionId, user)
+
+  await CollectionSentence.deleteMany({ collection: collection._id })
+  await Collection.deleteOne({ _id: collection._id })
+  await User.updateMany(
+    { pinnedCollections: collection._id },
+    { $pull: { pinnedCollections: collection._id } }
+  )
+}
+
+async function listDashboardCollections({ languagePair, user }) {
+  const pinnedIds = Array.from(pinnedCollectionIds(user))
+
+  if (pinnedIds.length === 0) {
+    return {
+      collections: [],
+      meta: {
+        total: 0,
+        page: 1,
+        perPage: 0,
+      },
+    }
+  }
+
+  const filters = {
+    _id: { $in: pinnedIds },
+    $or: collectionAccessConditions(user),
+  }
+
+  if (languagePair) {
+    const pair = await resolveLanguagePairSlug(languagePair)
+    filters.languagePair = pair._id
+  }
+
+  const collections = await Collection.find(filters).populate(['languagePair', 'group', 'owner'])
+
+  const collectionById = new Map(collections.map(collection => [String(collection._id), collection]))
+  const sortedCollections = pinnedIds.map(id => collectionById.get(id)).filter(Boolean)
+
+  return {
+    collections: sortedCollections.map(collection => serializeCollection(collection, user)),
+    meta: {
+      total: sortedCollections.length,
+      page: 1,
+      perPage: sortedCollections.length,
+    },
+  }
+}
+
+async function pinDashboardCollection(collectionId, user) {
+  const collection = await Collection.findOne(accessibleCollectionFilter(collectionId, user)).populate([
+    'languagePair',
+    'group',
+    'owner',
+  ])
+
+  if (!collection) {
+    throw collectionNotFoundError()
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId(user),
+    { $addToSet: { pinnedCollections: collection._id } },
+    { returnDocument: 'after', runValidators: true }
+  )
+
+  return serializeCollection(collection, updatedUser)
+}
+
+async function unpinDashboardCollection(collectionId, user) {
+  const updatedUser = await User.findByIdAndUpdate(
+    userId(user),
+    { $pull: { pinnedCollections: collectionId } },
+    { returnDocument: 'after', runValidators: true }
+  )
+
+  const collection = await Collection.findOne(accessibleCollectionFilter(collectionId, updatedUser || user)).populate([
+    'languagePair',
+    'group',
+    'owner',
+  ])
+
+  return collection ? serializeCollection(collection, updatedUser || user) : null
+}
+
 async function createSentence(collectionId, payload, user) {
   const collection = await ensureOwnedCollection(collectionId, user)
-  const text = String(payload.text || '').trim()
-  const translation = String(payload.translation || '').trim()
-  const cloze = String(payload.cloze || '').trim()
+  const normalized = normalizeSentencePayload(payload)
 
-  if (!text || !translation || !cloze) {
-    throw validationError('Sentence text, translation, and cloze are required.', [
+  if (!normalized.text || !normalized.translation) {
+    throw validationError('Sentence text and translation are required.', [
       { field: 'text', message: 'Sentence text is required.' },
       { field: 'translation', message: 'Sentence translation is required.' },
+    ])
+  }
+
+  if (!normalized.cloze) {
+    throw validationError('Sentence text must contain exactly one non-empty cloze marker.', [
       { field: 'cloze', message: 'Sentence cloze is required.' },
     ])
   }
@@ -244,13 +446,12 @@ async function createSentence(collectionId, payload, user) {
   const sentence = await CollectionSentence.create({
     owner: userId(user),
     collection: collection._id,
-    text,
-    translation,
-    cloze,
-    alternativeAnswers: payload.alternativeAnswers || [],
-    multipleChoiceOptions: payload.multipleChoiceOptions || [],
-    hint: payload.hint || '',
-    notes: payload.notes || '',
+    text: normalized.text,
+    translation: normalized.translation,
+    alternativeAnswers: normalized.alternativeAnswers,
+    multipleChoiceOptions: normalized.multipleChoiceOptions,
+    hint: normalized.hint,
+    notes: normalized.notes,
     order: payload.order ?? collection.sentenceCount,
   })
 
@@ -260,8 +461,42 @@ async function createSentence(collectionId, payload, user) {
   return serializeSentence(sentence)
 }
 
+async function updateSentence(collectionId, sentenceId, payload, user) {
+  const collection = await ensureOwnedCollection(collectionId, user)
+  const sentence = await CollectionSentence.findOne({ _id: sentenceId, collection: collection._id })
+  const normalized = normalizeSentencePayload(payload)
+
+  if (!sentence) {
+    throw collectionNotFoundError()
+  }
+
+  if (!normalized.text || !normalized.translation) {
+    throw validationError('Sentence text and translation are required.', [
+      { field: 'text', message: 'Sentence text is required.' },
+      { field: 'translation', message: 'Sentence translation is required.' },
+    ])
+  }
+
+  if (!normalized.cloze) {
+    throw validationError('Sentence text must contain exactly one non-empty cloze marker.', [
+      { field: 'cloze', message: 'Sentence cloze is required.' },
+    ])
+  }
+
+  sentence.text = normalized.text
+  sentence.translation = normalized.translation
+  sentence.alternativeAnswers = normalized.alternativeAnswers
+  sentence.multipleChoiceOptions = normalized.multipleChoiceOptions
+  sentence.hint = normalized.hint
+  sentence.notes = normalized.notes
+
+  await sentence.save()
+
+  return serializeSentence(sentence)
+}
+
 async function listSentences({ collectionId, query, context, page = 1, perPage = 20, user }) {
-  const collection = await getCollection(collectionId, user)
+  const collection = await getCollectionDocument(collectionId, user)
   const normalizedPage = Math.max(Number(page || 1), 1)
   const normalizedPerPage = Math.min(Math.max(Number(perPage || 20), 1), 100)
   const filters = buildSentenceQuery({ collectionId: collection._id, query, context })
@@ -285,7 +520,13 @@ async function listSentences({ collectionId, query, context, page = 1, perPage =
 module.exports = {
   createCollection,
   createSentence,
+  deleteCollection,
   getCollection,
+  listDashboardCollections,
   listCollections,
   listSentences,
+  pinDashboardCollection,
+  unpinDashboardCollection,
+  updateCollection,
+  updateSentence,
 }

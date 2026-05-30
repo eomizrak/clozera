@@ -9,6 +9,7 @@ describe('accounts service', () => {
       email: 'ada@example.com',
       role: 'admin',
       selectedLanguagePair: 'pair-1',
+      languagePairs: ['pair-1'],
       timezone: 'UTC',
       hash: 'hidden',
       salt: 'hidden',
@@ -21,6 +22,7 @@ describe('accounts service', () => {
       email: 'ada@example.com',
       role: 'admin',
       selectedLanguagePair: 'pair-1',
+      languagePairs: ['pair-1'],
       timezone: 'UTC',
     })
   })

@@ -1,6 +1,8 @@
 const request = require('supertest')
 
 const app = require('../../app')
+const Language = require('../../models/language')
+const LanguagePair = require('../../models/language-pair')
 const User = require('../../models/user')
 const { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } = require('../../test-utils/test-database')
 
@@ -73,6 +75,53 @@ describe('accounts integration', () => {
 
     const sessionResponse = await agent.get('/accounts/session')
     expect(sessionResponse.body.data).toBeNull()
+  })
+
+  it('returns populated selected language pair after login', async () => {
+    const german = await Language.create({
+      code: 'de',
+      iso3: 'deu',
+      name: 'German',
+      nativeName: 'Deutsch',
+      flagIso: 'de',
+    })
+    const english = await Language.create({
+      code: 'en',
+      iso3: 'eng',
+      name: 'English',
+      nativeName: 'English',
+      flagIso: 'gb',
+    })
+    const pair = await LanguagePair.create({
+      slug: 'deu-eng',
+      targetLanguage: german._id,
+      baseLanguage: english._id,
+      name: 'German from English',
+      active: true,
+    })
+    const user = new User({
+      name: 'Grace Hopper',
+      username: 'grace',
+      email: 'grace@example.com',
+      selectedLanguagePair: pair._id,
+      languagePairs: [pair._id],
+    })
+    await User.register(user, 'secret123')
+
+    const response = await request(app).post('/accounts/session').send({
+      email: 'grace@example.com',
+      password: 'secret123',
+    })
+
+    expect(response.status).toBe(200)
+    expect(response.body.data.selectedLanguagePair).toMatchObject({
+      slug: 'deu-eng',
+      name: 'German from English',
+    })
+    expect(response.body.data.languagePairs).toHaveLength(1)
+    expect(response.body.data.languagePairs[0]).toMatchObject({
+      slug: 'deu-eng',
+    })
   })
 
   it('returns and updates the current user profile', async () => {
