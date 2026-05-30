@@ -19,7 +19,7 @@ const Language = require('../src/models/language')
 const LanguagePair = require('../src/models/language-pair')
 const User = require('../src/models/user')
 
-const seedPath = process.env.SEED_FILE || path.join(__dirname, '..', 'data', 'seeds', 'deu-eng.json')
+const seedPath = process.env.SEED_FILE || path.join(__dirname, '..', 'data', 'seeds', 'initial-seed.json')
 
 async function connectDatabase() {
   if (!process.env.MONGODB_CONNECTION_STRING) {
@@ -169,7 +169,7 @@ async function upsertSentences(pair, sentencesByCollectionSlug = {}, owner) {
 
     for (const [index, sentence] of sentences.entries()) {
       await CollectionSentence.findOneAndUpdate(
-        { collection: collection._id, text: sentence.text, cloze: sentence.cloze },
+        { collection: collection._id, text: sentence.text },
         {
           ...sentence,
           collection: collection._id,
@@ -198,15 +198,24 @@ async function main() {
   const owner = await resolveSeedOwner()
   const languages = await upsertLanguages(seed.languages)
   const languagePairs = await upsertLanguagePairs(seed.languagePairs)
-  const { pair, groups, collections } = await upsertCollections(seed.collections, owner)
-  const totalSentences = await upsertSentences(pair, seed.sentencesByCollectionSlug, owner)
+  const collectionPairs = seed.collectionPairs || (seed.collections ? [seed.collections] : [])
+  let groupCount = 0
+  let collectionCount = 0
+  let totalSentences = 0
+
+  for (const collectionPair of collectionPairs) {
+    const { pair, groups, collections } = await upsertCollections(collectionPair, owner)
+    groupCount += groups.length
+    collectionCount += collections.length
+    totalSentences += await upsertSentences(pair, collectionPair.sentencesByCollectionSlug, owner)
+  }
 
   console.log(`Seeded ${seedPath}`)
   console.log(`Owner: ${owner.email}`)
   console.log(`Languages: ${languages.length}`)
   console.log(`Language pairs: ${languagePairs.length}`)
-  console.log(`Groups: ${groups.length}`)
-  console.log(`Collections: ${collections.length}`)
+  console.log(`Groups: ${groupCount}`)
+  console.log(`Collections: ${collectionCount}`)
   console.log(`Sentences: ${totalSentences}`)
 }
 
