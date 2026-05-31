@@ -10,6 +10,10 @@ const loginTarget = computed(() =>
   account.user ? playTargetForUser(account.user) : { name: 'login' },
 )
 
+const practiceTarget = computed(() =>
+  account.user ? playTargetForUser(account.user) : { name: 'sign-up' },
+)
+
 const actionLabel = computed(() => {
   if (!account.user) {
     return 'Login'
@@ -27,6 +31,12 @@ const actionLabel = computed(() => {
       <nav class="public-navbar__nav" aria-label="Primary">
         <RouterLink class="public-navbar__login ui-button ui-button--pill" :to="loginTarget">
           {{ actionLabel }}
+        </RouterLink>
+        <RouterLink
+          class="public-navbar__practice ui-button ui-button--primary ui-button--pill"
+          :to="practiceTarget"
+        >
+          Practice
         </RouterLink>
       </nav>
     </div>
@@ -64,11 +74,33 @@ const actionLabel = computed(() => {
   display: flex;
   align-items: center;
   justify-content: flex-end;
+  gap: 0.65rem;
 }
 
-.public-navbar__login {
+.public-navbar__login,
+.public-navbar__practice {
   padding: 0 1.2rem;
   font-weight: var(--weight-bold);
   text-decoration: none;
+}
+
+@media (max-width: 560px) {
+  .public-navbar__inner {
+    gap: 0.7rem;
+  }
+
+  .public-navbar__brand {
+    font-size: 1.35rem;
+  }
+
+  .public-navbar__nav {
+    gap: 0.45rem;
+  }
+
+  .public-navbar__login,
+  .public-navbar__practice {
+    min-height: var(--ui-control-height-compact);
+    padding: 0 0.8rem;
+  }
 }
 </style>
