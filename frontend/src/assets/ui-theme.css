@@ -1,0 +1,231 @@
+:root {
+  --ui-control-height: 2.75rem;
+  --ui-control-height-compact: 2.5rem;
+  --ui-icon-button-size: 2.75rem;
+  --ui-icon-button-size-sm: 2.25rem;
+  --ui-icon-button-size-mobile: 2.45rem;
+  --ui-icon-size-sm: 1rem;
+  --ui-icon-size-md: 1.125rem;
+  --ui-icon-size-lg: 1.25rem;
+  --ui-radius-control: 0.35rem;
+  --ui-radius-chip: 0.3rem;
+  --ui-radius-field: 0.5rem;
+  --ui-radius-card: 0.55rem;
+  --ui-radius-panel: 0.85rem;
+  --ui-radius-shell: 1rem;
+  --ui-radius-hero: 1.5rem;
+  --ui-radius-pill: 999px;
+  --ui-color-primary: var(--p-primary-color, var(--public-orange));
+  --ui-color-primary-hover: var(--p-primary-hover-color, var(--public-orange-hover));
+  --ui-color-primary-active: var(--p-primary-active-color, var(--public-orange-dark));
+  --ui-color-primary-contrast: var(--p-primary-contrast-color, var(--public-white));
+  --ui-text-strong: var(--public-ink);
+  --ui-text-body: var(--public-muted);
+  --ui-text-accent: var(--public-accent-muted);
+  --ui-surface-base: var(--public-white);
+  --ui-surface-page: var(--public-page-bg);
+  --ui-surface-muted: var(--public-surface-warm);
+  --ui-surface-card: var(--public-surface-strong);
+  --ui-surface-chip: var(--public-chip-bg-soft);
+  --ui-border-soft: var(--public-border-soft);
+  --ui-border-default: var(--public-border);
+  --ui-border-strong: var(--public-border-strong);
+  --ui-border-accent: var(--public-border-accent);
+  --ui-border-input: var(--public-input-border);
+  --ui-shadow-raised: var(--public-shadow);
+  --ui-shadow-soft: var(--public-shadow-soft);
+  --ui-shadow-subtle: var(--public-shadow-subtle);
+  --ui-shadow-subtle-hover: var(--public-shadow-subtle-hover);
+  --ui-shadow-empty: 0 0 0 rgba(154, 52, 18, 0);
+  --ui-focus-ring: 0 0 0 3px color-mix(in srgb, var(--ui-color-primary) 18%, transparent);
+  --ui-color-danger: var(--p-red-700, #b91c1c);
+  --ui-color-danger-hover: var(--p-red-800, #991b1b);
+  --ui-color-danger-active: var(--p-red-900, #7f1d1d);
+  --ui-color-danger-border: color-mix(in srgb, var(--ui-color-danger) 28%, transparent);
+  --ui-color-danger-shadow: color-mix(in srgb, var(--ui-color-danger-hover) 20%, transparent);
+  --ui-shadow-danger: 0 12px 26px var(--ui-color-danger-shadow);
+  --ui-code-color: var(--p-rose-700, #be123c);
+  --ui-code-bg: color-mix(in srgb, var(--ui-code-color) 8%, transparent);
+  --ui-state-hover-bg: color-mix(in srgb, var(--ui-color-primary) 10%, transparent);
+  --ui-state-active-bg: var(--ui-surface-chip);
+  --ui-state-active-hover-bg: color-mix(in srgb, var(--ui-color-primary) 18%, var(--ui-surface-base));
+}
+
+.ui-button,
+.ui-button.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ui-control-height);
+  color: var(--ui-text-accent);
+  font-weight: var(--weight-extrabold);
+  background: var(--ui-surface-base);
+  border: 1px solid var(--ui-border-accent);
+  border-radius: var(--ui-radius-control);
+  box-shadow: var(--ui-shadow-soft);
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.ui-button:not(:disabled):hover,
+.ui-button:not(:disabled):focus-visible,
+.ui-button.p-button:not(:disabled):hover,
+.ui-button.p-button:not(:disabled):focus-visible {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-primary);
+  border-color: var(--ui-color-primary-hover);
+  transform: translateY(-1px);
+}
+
+.ui-button--primary,
+.ui-button--primary.p-button {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-primary);
+  border-color: var(--ui-color-primary-hover);
+}
+
+.ui-button--primary:not(:disabled):hover,
+.ui-button--primary:not(:disabled):focus-visible,
+.ui-button--primary.p-button:not(:disabled):hover,
+.ui-button--primary.p-button:not(:disabled):focus-visible {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-primary-hover);
+  border-color: var(--ui-color-primary-active);
+}
+
+.ui-button--danger,
+.ui-button--danger.p-button {
+  color: var(--ui-color-danger-hover);
+  background: var(--ui-surface-base);
+  border-color: var(--ui-color-danger-border);
+}
+
+.ui-button--danger:not(:disabled):hover,
+.ui-button--danger:not(:disabled):focus-visible,
+.ui-button--danger.p-button:not(:disabled):hover,
+.ui-button--danger.p-button:not(:disabled):focus-visible {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-danger);
+  border-color: var(--ui-color-danger-hover);
+}
+
+.ui-button--danger-solid,
+.ui-button--danger-solid.p-button {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-danger);
+  border-color: var(--ui-color-danger-hover);
+  box-shadow: var(--ui-shadow-danger);
+}
+
+.ui-button--danger-solid:not(:disabled):hover,
+.ui-button--danger-solid:not(:disabled):focus-visible,
+.ui-button--danger-solid.p-button:not(:disabled):hover,
+.ui-button--danger-solid.p-button:not(:disabled):focus-visible {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-danger-hover);
+  border-color: var(--ui-color-danger-active);
+}
+
+.ui-button--icon {
+  width: var(--ui-icon-button-size);
+  height: var(--ui-icon-button-size);
+  min-height: var(--ui-icon-button-size);
+  padding: 0;
+}
+
+.ui-button--icon-sm {
+  width: var(--ui-icon-button-size-sm);
+  height: var(--ui-icon-button-size-sm);
+  min-height: var(--ui-icon-button-size-sm);
+  padding: 0;
+}
+
+.ui-button--pill,
+.ui-button--pill.p-button {
+  border-radius: var(--ui-radius-pill);
+}
+
+.ui-button--active {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-primary-active);
+  border-color: var(--ui-text-accent);
+  box-shadow:
+    var(--ui-focus-ring),
+    var(--ui-shadow-soft);
+  transform: translateY(-1px);
+}
+
+.ui-button--active:not(:disabled):hover,
+.ui-button--active:not(:disabled):focus-visible {
+  color: var(--ui-color-primary-contrast);
+  background: var(--ui-color-primary-hover);
+  border-color: var(--ui-color-primary-active);
+}
+
+.ui-button:disabled,
+.ui-button.p-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  transform: none;
+}
+
+.ui-link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: var(--ui-control-height-compact);
+  padding: 0.25rem 0.35rem;
+  color: var(--ui-color-primary-active);
+  font-family: inherit;
+  font-size: var(--text-md);
+  font-weight: var(--weight-extrabold);
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--ui-radius-control) - 0.05rem);
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.ui-link-button:hover,
+.ui-link-button:focus-visible {
+  color: var(--ui-color-primary);
+  background: var(--ui-surface-chip);
+  outline: 0;
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+  transform: translateX(-1px);
+}
+
+.p-dialog .p-dialog-header .p-dialog-header-actions .p-button,
+.p-dialog .p-dialog-header .p-dialog-header-actions .p-button.p-button-icon-only,
+.p-dialog .p-dialog-header .p-dialog-header-actions .p-button.p-button-rounded {
+  border-radius: var(--ui-radius-control) !important;
+}
+
+.ui-dialog.p-dialog {
+  width: min(92vw, 32rem);
+}
+
+.p-inputtext,
+.p-textarea,
+.p-select,
+.p-selectbutton .p-togglebutton {
+  border-radius: var(--ui-radius-field);
+}
+
+@media (max-width: 560px) {
+  .ui-button--icon {
+    width: var(--ui-icon-button-size-mobile);
+    height: var(--ui-icon-button-size-mobile);
+    min-height: var(--ui-icon-button-size-mobile);
+  }
+}
