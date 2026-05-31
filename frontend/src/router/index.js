@@ -3,6 +3,7 @@ import { authenticatedHomeTarget, selectedLanguagePairSlugFromUser } from '@/uti
 import { useAccountStore } from '@/stores/account'
 import DashboardView from '@/views/DashboardView.vue'
 import CollectionDetailView from '@/views/CollectionDetailView.vue'
+import PracticeSessionView from '@/views/PracticeSessionView.vue'
 import HomeView from '@/views/HomeView.vue'
 import LanguagePairSelectView from '@/views/LanguagePairSelectView.vue'
 import LoginView from '@/views/LoginView.vue'
@@ -36,6 +37,12 @@ const router = createRouter({
       path: '/dashboard/collections/:id',
       name: 'collection-detail',
       component: CollectionDetailView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/dashboard/collections/:id/practice',
+      name: 'collection-practice',
+      component: PracticeSessionView,
       meta: { requiresAuth: true },
     },
     {

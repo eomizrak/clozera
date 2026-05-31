@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Pin, PinOff, Rows3 } from '@lucide/vue'
+import { Pin, PinOff, Play, Rows3 } from '@lucide/vue'
 
 const props = defineProps({
   collection: {
@@ -10,7 +10,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['pin', 'unpin'])
+const emit = defineEmits(['pin', 'practice', 'unpin'])
 
 const collectionMeta = computed(() => {
   const value = props.collection.level
@@ -26,6 +26,10 @@ function formatNumber(value) {
 
 function pinLabel() {
   return props.collection.isPinned ? 'Remove from dashboard' : 'Add to dashboard'
+}
+
+function practiceLabel() {
+  return props.collection.sentenceCount > 0 ? `Practice ${props.collection.name}` : 'No sentences to practice'
 }
 </script>
 
@@ -51,17 +55,29 @@ function pinLabel() {
         <Rows3 :size="16" aria-hidden="true" />
         <span>{{ formatNumber(collection.sentenceCount) }} sentences</span>
       </p>
-      <button
-        v-if="collection.capabilities?.canPin || collection.capabilities?.canUnpin"
-        class="ui-button ui-button--icon-sm collection-card__pin"
-        type="button"
-        :aria-label="pinLabel()"
-        :title="pinLabel()"
-        @click="collection.isPinned ? emit('unpin', collection) : emit('pin', collection)"
-      >
-        <PinOff v-if="collection.isPinned" :size="18" aria-hidden="true" />
-        <Pin v-else :size="18" aria-hidden="true" />
-      </button>
+      <div class="collection-card__actions">
+        <button
+          class="ui-button ui-button--icon-sm collection-card__play"
+          type="button"
+          :aria-label="practiceLabel()"
+          :title="practiceLabel()"
+          :disabled="!collection.sentenceCount"
+          @click="emit('practice', collection)"
+        >
+          <Play :size="17" aria-hidden="true" fill="currentColor" />
+        </button>
+        <button
+          v-if="collection.capabilities?.canPin || collection.capabilities?.canUnpin"
+          class="ui-button ui-button--icon-sm collection-card__pin"
+          type="button"
+          :aria-label="pinLabel()"
+          :title="pinLabel()"
+          @click="collection.isPinned ? emit('unpin', collection) : emit('pin', collection)"
+        >
+          <PinOff v-if="collection.isPinned" :size="18" aria-hidden="true" />
+          <Pin v-else :size="18" aria-hidden="true" />
+        </button>
+      </div>
     </div>
   </article>
 </template>

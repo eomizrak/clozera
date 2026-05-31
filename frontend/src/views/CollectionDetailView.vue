@@ -8,8 +8,9 @@ import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import Textarea from 'primevue/textarea'
-import { ArrowLeft, Pencil, Pin, PinOff, Plus, Rows3, Search, Trash2 } from '@lucide/vue'
+import { ArrowLeft, Keyboard, ListChecks, Pencil, Pin, PinOff, Play, Plus, Rows3, Search, Trash2 } from '@lucide/vue'
 import DashboardNavbar from '@/components/DashboardNavbar.vue'
+import { PRACTICE_MODES } from '@/lib/practice-session'
 import {
   inferClozeFromText,
   sentenceParts,
@@ -30,12 +31,26 @@ const createDialogVisible = ref(false)
 const editDialogVisible = ref(false)
 const editCollectionDialogVisible = ref(false)
 const deleteCollectionDialogVisible = ref(false)
+const practiceDialogVisible = ref(false)
 const activeEditSentenceId = ref('')
 const searchVisible = ref(false)
 const searchQuery = ref('')
+const practiceMode = ref(PRACTICE_MODES.typed)
 const clozeOpenMarker = '{{'
 const clozeCloseMarker = '}}'
 const clozeExampleText = 'A {{missing}} word.'
+const practiceModeOptions = [
+  {
+    value: PRACTICE_MODES.typed,
+    label: 'Typed answer',
+    icon: Keyboard,
+  },
+  {
+    value: PRACTICE_MODES.choice,
+    label: 'Multiple choice',
+    icon: ListChecks,
+  },
+]
 const newSentence = reactive({
   text: '',
   translation: '',
@@ -213,12 +228,24 @@ async function togglePinned() {
   }
 }
 
-function goBackToCollections() {
-  if (window.history.state?.back) {
-    router.back()
-    return
-  }
+function openPracticeDialog() {
+  if (!collection.value?.sentenceCount) return
 
+  practiceMode.value = PRACTICE_MODES.typed
+  practiceDialogVisible.value = true
+}
+
+async function startPracticeSession() {
+  if (!collection.value) return
+
+  await router.push({
+    name: 'collection-practice',
+    params: { id: collection.value.id },
+    query: { mode: practiceMode.value },
+  })
+}
+
+function goBackToCollections() {
   router.push({ name: 'dashboard' })
 }
 
@@ -236,7 +263,7 @@ onMounted(async () => {
       <button
         class="ui-link-button ui-link-button--back collection-detail-view__back"
         type="button"
-        aria-label="Back to previous page"
+        aria-label="Back to dashboard"
         @click="goBackToCollections"
       >
         <ArrowLeft :size="18" aria-hidden="true" />
@@ -262,6 +289,16 @@ onMounted(async () => {
           </div>
 
           <div class="collection-detail-view__hero-actions" aria-label="Collection tools">
+            <button
+              class="ui-button ui-button--icon-sm collection-detail-view__hero-action-button collection-detail-view__hero-action-button--play"
+              type="button"
+              :aria-label="collection.sentenceCount ? `Practice ${collection.name}` : 'No sentences to practice'"
+              :title="collection.sentenceCount ? `Practice ${collection.name}` : 'No sentences to practice'"
+              :disabled="!collection.sentenceCount"
+              @click="openPracticeDialog"
+            >
+              <Play :size="17" aria-hidden="true" fill="currentColor" />
+            </button>
             <button
               v-if="collection.capabilities?.canPin || collection.capabilities?.canUnpin"
               class="ui-button ui-button--icon-sm collection-detail-view__hero-action-button"
@@ -362,6 +399,48 @@ onMounted(async () => {
         </section>
       </template>
     </main>
+
+    <Dialog
+      v-model:visible="practiceDialogVisible"
+      class="ui-dialog dashboard-view__practice-dialog"
+      modal
+      header="Practice session"
+      :draggable="false"
+    >
+      <div class="dashboard-view__practice-setup">
+        <div class="dashboard-view__practice-copy">
+          <p>{{ collection?.name }}</p>
+          <span>Up to 10 random sentences</span>
+        </div>
+
+        <div class="dashboard-view__practice-modes" role="radiogroup" aria-label="Practice mode">
+          <button
+            v-for="option in practiceModeOptions"
+            :key="option.value"
+            class="dashboard-view__practice-mode"
+            :class="{ 'dashboard-view__practice-mode--active': practiceMode === option.value }"
+            type="button"
+            role="radio"
+            :aria-checked="practiceMode === option.value"
+            @click="practiceMode = option.value"
+          >
+            <component :is="option.icon" :size="20" stroke-width="2.4" aria-hidden="true" />
+            <span>{{ option.label }}</span>
+          </button>
+        </div>
+
+        <Button
+          class="ui-button ui-button--primary dashboard-view__create-submit"
+          type="button"
+          label="Start session"
+          @click="startPracticeSession"
+        >
+          <template #icon>
+            <Play :size="18" fill="currentColor" aria-hidden="true" />
+          </template>
+        </Button>
+      </div>
+    </Dialog>
 
     <Dialog
       v-model:visible="createDialogVisible"

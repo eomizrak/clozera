@@ -10,7 +10,7 @@ defineProps({
   },
 })
 
-const emit = defineEmits(['pin', 'unpin'])
+const emit = defineEmits(['pin', 'practice', 'unpin'])
 
 const collections = useCollectionsStore()
 
@@ -84,6 +84,7 @@ function groupSummaryId(group) {
           <CollectionCard
             :collection="collection"
             @pin="emit('pin', $event)"
+            @practice="emit('practice', $event)"
             @unpin="emit('unpin', $event)"
           />
         </li>

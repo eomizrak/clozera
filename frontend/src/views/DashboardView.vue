@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Checkbox from 'primevue/checkbox'
 import Dialog from 'primevue/dialog'
@@ -8,7 +9,7 @@ import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import SelectButton from 'primevue/selectbutton'
 import Textarea from 'primevue/textarea'
-import { Plus, Search } from '@lucide/vue'
+import { Keyboard, ListChecks, Play, Plus, Search } from '@lucide/vue'
 import CollectionCard from '@/components/CollectionCard.vue'
 import CollectionGroup from '@/components/CollectionGroup.vue'
 import DashboardNavbar from '@/components/DashboardNavbar.vue'
@@ -20,6 +21,7 @@ import {
   restoreDashboardScroll,
   saveDashboardState as persistDashboardState,
 } from '@/lib/dashboard-workflow'
+import { PRACTICE_MODES } from '@/lib/practice-session'
 import { useAccountStore } from '@/stores/account'
 import { useCollectionsStore } from '@/stores/collections'
 import { useLanguagesStore } from '@/stores/languages'
@@ -27,15 +29,31 @@ import { useLanguagesStore } from '@/stores/languages'
 const account = useAccountStore()
 const collections = useCollectionsStore()
 const languages = useLanguagesStore()
+const router = useRouter()
 
 const createDialogVisible = ref(false)
+const practiceDialogVisible = ref(false)
 const searchVisible = ref(false)
 const searchQuery = ref('')
 const activeSection = ref(readDashboardSection())
 const hasRestoredScroll = ref(false)
+const selectedPracticeCollection = ref(null)
+const practiceMode = ref(PRACTICE_MODES.typed)
 const sectionOptions = [
   { label: 'Dashboard', value: DASHBOARD_SECTIONS.dashboard },
   { label: 'Collections', value: DASHBOARD_SECTIONS.collections },
+]
+const practiceModeOptions = [
+  {
+    value: PRACTICE_MODES.typed,
+    label: 'Typed answer',
+    icon: Keyboard,
+  },
+  {
+    value: PRACTICE_MODES.choice,
+    label: 'Multiple choice',
+    icon: ListChecks,
+  },
 ]
 
 const newCollection = reactive({
@@ -132,6 +150,24 @@ async function unpinCollection(collection) {
   await collections.unpinCollection(collection.id)
 }
 
+function openPracticeDialog(collection) {
+  if (!collection?.sentenceCount) return
+
+  selectedPracticeCollection.value = collection
+  practiceMode.value = PRACTICE_MODES.typed
+  practiceDialogVisible.value = true
+}
+
+async function startPracticeSession() {
+  if (!selectedPracticeCollection.value) return
+
+  await router.push({
+    name: 'collection-practice',
+    params: { id: selectedPracticeCollection.value.id },
+    query: { mode: practiceMode.value },
+  })
+}
+
 onMounted(async () => {
   window.addEventListener('scroll', saveDashboardState, { passive: true })
   await languages.ensureLoaded()
@@ -209,6 +245,7 @@ onBeforeUnmount(() => {
             <CollectionCard
               :collection="collection"
               @pin="pinCollection"
+              @practice="openPracticeDialog"
               @unpin="unpinCollection"
             />
           </li>
@@ -241,7 +278,12 @@ onBeforeUnmount(() => {
             :aria-label="shelf.name"
           >
             <h2>{{ shelf.name }}</h2>
-            <CollectionGroup :groups="shelf.groups" @pin="pinCollection" @unpin="unpinCollection" />
+            <CollectionGroup
+              :groups="shelf.groups"
+              @pin="pinCollection"
+              @practice="openPracticeDialog"
+              @unpin="unpinCollection"
+            />
           </section>
         </div>
       </section>
@@ -278,6 +320,48 @@ onBeforeUnmount(() => {
           :loading="collections.isCreating"
         />
       </form>
+    </Dialog>
+
+    <Dialog
+      v-model:visible="practiceDialogVisible"
+      class="ui-dialog dashboard-view__practice-dialog"
+      modal
+      header="Practice session"
+      :draggable="false"
+    >
+      <div class="dashboard-view__practice-setup">
+        <div class="dashboard-view__practice-copy">
+          <p>{{ selectedPracticeCollection?.name }}</p>
+          <span>Up to 10 random sentences</span>
+        </div>
+
+        <div class="dashboard-view__practice-modes" role="radiogroup" aria-label="Practice mode">
+          <button
+            v-for="option in practiceModeOptions"
+            :key="option.value"
+            class="dashboard-view__practice-mode"
+            :class="{ 'dashboard-view__practice-mode--active': practiceMode === option.value }"
+            type="button"
+            role="radio"
+            :aria-checked="practiceMode === option.value"
+            @click="practiceMode = option.value"
+          >
+            <component :is="option.icon" :size="20" stroke-width="2.4" aria-hidden="true" />
+            <span>{{ option.label }}</span>
+          </button>
+        </div>
+
+        <Button
+          class="ui-button ui-button--primary dashboard-view__create-submit"
+          type="button"
+          label="Start session"
+          @click="startPracticeSession"
+        >
+          <template #icon>
+            <Play :size="18" fill="currentColor" aria-hidden="true" />
+          </template>
+        </Button>
+      </div>
     </Dialog>
   </div>
 </template>
