@@ -48,7 +48,7 @@ to `.env.test.local` when first setting up tests. Guards require `NODE_ENV=test`
 a `mongodb://` URI and a database named `clozera-test` or `clozera_test`, optionally
 followed by a `-`/`_` suffix (for example `clozera_test_upgrade`). Allowed hosts are
 `localhost`, `127.0.0.1`, `::1`, `mongo`, `mongodb` and `host.docker.internal`.
-Atlas and other remote hosts are rejected. The active connection's database and
+Atlas and other remote hosts are rejected. The active connection's database,
 host and port are checked again immediately before collection deletion.
 The test configuration sets `NODE_ENV=test` and `DOTENV_CONFIG_PATH` so the app
 loads `.env.test.local`; an explicitly supplied connection string takes precedence.
@@ -71,6 +71,8 @@ without a Vite+ runtime dependency or bundling step.
 Development uses `Dockerfile`, which installs development tools and the Vite+
 configuration; Docker Compose mounts `src/` for automatic restarts. Production
 uses `Dockerfile.production` and `npm ci --omit=dev`, then starts Node directly as PID 1 so container shutdown signals reach the server.
+
+See [the migration notes](../DEPENDENCY_UPGRADE.md) for validation and dependency decisions.
 
 ## Server lifecycle and readiness
 

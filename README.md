@@ -1,21 +1,13 @@
-# clozera
+# Clozera
+
 Open-source language learning app built around cloze-based practice.
 
 ## Development
 
-Create a local backend environment file before running Docker Compose:
-
-```sh
-cp backend/.env.example backend/.env
-```
-
-Then start the development services:
-
-```sh
-docker compose up --build
-```
-
-## Local MongoDB
+Use Node.js 24.22.1 (see each application's `.node-version`) and npm for local development.
+The frontend and backend have separate dependency manifests and lockfiles.
+Both applications use Vite+ through npm scripts; no global `vp` installation is required.
+The Express backend and frontend use ES Modules; both run tests with Vite+ Vitest.
 
 Local Docker tracks the latest MongoDB 8.0 patch with `mongo:8.0`. Refresh the
 database image before testing with `docker compose up -d --pull always mongodb`.
@@ -35,3 +27,18 @@ take a consistent backup and validate a restored copy using MongoDB's supported
 migration procedure. Keep the source volume until the new copy is verified.
 Use `docker compose stop` for ordinary shutdowns; `docker compose down -v` deletes
 the declared database volume.
+
+Create a local backend environment file before running Docker Compose:
+
+```sh
+cp backend/.env.example backend/.env
+```
+
+Then start the development services:
+
+```sh
+docker compose up --build
+```
+
+See the [dependency upgrade and Vite+ migration notes](DEPENDENCY_UPGRADE.md)
+for validation commands, compatibility decisions, and future toolchain updates.
