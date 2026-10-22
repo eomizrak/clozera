@@ -13,9 +13,9 @@ Oxlint, Oxfmt, Vitest and task orchestration. Install dependencies with `npm ci`
 | `npm run check`                                 | Check formatting, lint and inferred types with Vite+           |
 | `npm run lint` / `npm run lint:fix`             | Run Oxlint / apply its fixes                                   |
 | `npm run format:check` / `npm run format:write` | Check / apply Oxfmt formatting                                 |
-| `npm test`                                      | Run the 40 unit tests with Vite+ Vitest                        |
+| `npm test`                                      | Run the 56 unit tests with Vite+ Vitest                        |
 | `npm run test:integration`                      | Run the 35 integration tests                                   |
-| `npm run test:all`                              | Run all 75 tests sequentially                                  |
+| `npm run test:all`                              | Run all 91 tests sequentially                                  |
 | `npm run test:watch`                            | Watch unit tests                                               |
 | `npm run test:coverage`                         | Collect unit-test coverage                                     |
 | `npm run test:debug`                            | Run verbose unit tests with hanging-process diagnostics        |
@@ -41,8 +41,15 @@ to match Node's native handling of CommonJS dependencies, particularly the
 `npm test` selects the `unit` project, `npm run test:integration` selects the
 `integration` project, and `npm run test:all` (or `npm exec -- vp test run`) runs
 both. Tests run in isolated fork processes. File parallelism is disabled because
-integration suites share and clear a database. Set `MONGODB_CONNECTION_STRING`
-to a dedicated test database; never point integration tests at application data.
+integration suites share and clear a database. Set `TEST_MONGODB_CONNECTION_STRING`
+to a dedicated local test database; the application variable
+`MONGODB_CONNECTION_STRING` is never used as a fallback. Copy `.env.test.example`
+to `.env.test.local` when first setting up tests. Guards require `NODE_ENV=test`,
+a `mongodb://` URI and a database named `clozera-test` or `clozera_test`, optionally
+followed by a `-`/`_` suffix (for example `clozera_test_upgrade`). Allowed hosts are
+`localhost`, `127.0.0.1`, `::1`, `mongo`, `mongodb` and `host.docker.internal`.
+Atlas and other remote hosts are rejected. The active connection's database and
+host and port are checked again immediately before collection deletion.
 The test configuration sets `NODE_ENV=test` and `DOTENV_CONFIG_PATH` so the app
 loads `.env.test.local`; an explicitly supplied connection string takes precedence.
 
