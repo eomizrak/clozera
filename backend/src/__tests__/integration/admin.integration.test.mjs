@@ -1,10 +1,11 @@
-const app = require('../../app')
-const Collection = require('../../models/collection')
-const CollectionSentence = require('../../models/collection-sentence')
-const Language = require('../../models/language')
-const LanguagePair = require('../../models/language-pair')
-const { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } = require('../../test-utils/test-database')
-const { loginAs } = require('../../test-utils/auth')
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test'
+import app from '../../app.js'
+import Collection from '../../models/collection.js'
+import CollectionSentence from '../../models/collection-sentence.js'
+import Language from '../../models/language.js'
+import LanguagePair from '../../models/language-pair.js'
+import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from '../../test-utils/test-database.js'
+import { loginAs } from '../../test-utils/auth.js'
 
 describe('admin integration', () => {
   beforeAll(async () => {
@@ -236,7 +237,7 @@ describe('admin integration', () => {
     })
     const missingCollectionId = new Collection()._id
 
-    const response = await agent.post(`/admin/collections/${missingCollectionId}/sentences/import`).send({
+    const response = await agent.post(`/admin/collections/${missingCollectionId.toString()}/sentences/import`).send({
       sentences: [
         {
           text: 'Ich {{bin}} hier.',
@@ -284,7 +285,7 @@ describe('admin integration', () => {
       slug: 'fast-track-level-1',
     })
 
-    const response = await agent.post(`/admin/collections/${collection._id}/sentences/import`).send({
+    const response = await agent.post(`/admin/collections/${collection._id.toString()}/sentences/import`).send({
       sentences: [
         {
           text: 'Ich {{bin}} {{hier}}.',

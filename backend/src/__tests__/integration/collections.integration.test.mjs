@@ -1,12 +1,13 @@
-const app = require('../../app')
-const Collection = require('../../models/collection')
-const CollectionGroup = require('../../models/collection-group')
-const CollectionSentence = require('../../models/collection-sentence')
-const Language = require('../../models/language')
-const LanguagePair = require('../../models/language-pair')
-const User = require('../../models/user')
-const { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } = require('../../test-utils/test-database')
-const { loginAs } = require('../../test-utils/auth')
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test'
+import app from '../../app.js'
+import Collection from '../../models/collection.js'
+import CollectionGroup from '../../models/collection-group.js'
+import CollectionSentence from '../../models/collection-sentence.js'
+import Language from '../../models/language.js'
+import LanguagePair from '../../models/language-pair.js'
+import User from '../../models/user.js'
+import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from '../../test-utils/test-database.js'
+import { loginAs } from '../../test-utils/auth.js'
 
 describe('collections integration', () => {
   beforeAll(async () => {
@@ -203,7 +204,7 @@ describe('collections integration', () => {
       email: 'ada@example.com',
     })
 
-    const response = await agent.get(`/collections/${collection._id}/sentences`).query({
+    const response = await agent.get(`/collections/${collection._id.toString()}/sentences`).query({
       page: 1,
       perPage: 1,
     })
@@ -234,8 +235,8 @@ describe('collections integration', () => {
       email: 'ada@example.com',
     })
 
-    const collectionResponse = await agent.get(`/collections/${collection._id}`)
-    const sentencesResponse = await agent.get(`/collections/${collection._id}/sentences`)
+    const collectionResponse = await agent.get(`/collections/${collection._id.toString()}`)
+    const sentencesResponse = await agent.get(`/collections/${collection._id.toString()}/sentences`)
 
     expect(collectionResponse.status).toBe(404)
     expect(collectionResponse.body.error.code).toBe('NOT_FOUND')
@@ -284,8 +285,8 @@ describe('collections integration', () => {
     const firstPin = await agent.post('/dashboard/collections').send({ collectionId: collection._id })
     const secondPin = await agent.post('/dashboard/collections').send({ collectionId: collection._id })
     const dashboard = await agent.get('/dashboard/collections')
-    const firstUnpin = await agent.delete(`/dashboard/collections/${collection._id}`)
-    const secondUnpin = await agent.delete(`/dashboard/collections/${collection._id}`)
+    const firstUnpin = await agent.delete(`/dashboard/collections/${collection._id.toString()}`)
+    const secondUnpin = await agent.delete(`/dashboard/collections/${collection._id.toString()}`)
 
     expect(firstPin.status).toBe(200)
     expect(secondPin.status).toBe(200)
@@ -373,7 +374,7 @@ describe('collections integration', () => {
       isPublic: false,
     })
 
-    const response = await agent.patch(`/collections/${collection._id}`).send({
+    const response = await agent.patch(`/collections/${collection._id.toString()}`).send({
       name: 'Travel Practice',
       description: 'Ready to share',
       visibility: 'public',
@@ -424,7 +425,7 @@ describe('collections integration', () => {
     })
     await viewerAgent.post('/dashboard/collections').send({ collectionId: collection._id })
 
-    const response = await ownerAgent.delete(`/collections/${collection._id}`)
+    const response = await ownerAgent.delete(`/collections/${collection._id.toString()}`)
 
     expect(response.status).toBe(204)
     await expect(Collection.findById(collection._id)).resolves.toBeNull()
@@ -442,10 +443,10 @@ describe('collections integration', () => {
     })
     await Collection.findByIdAndUpdate(collection._id, { owner: admin._id })
 
-    const updateResponse = await agent.patch(`/collections/${collection._id}`).send({
+    const updateResponse = await agent.patch(`/collections/${collection._id.toString()}`).send({
       name: 'Changed Official',
     })
-    const sentenceResponse = await agent.post(`/collections/${collection._id}/sentences`).send({
+    const sentenceResponse = await agent.post(`/collections/${collection._id.toString()}/sentences`).send({
       text: 'Ich {{ändere}}.',
       translation: 'I change.',
     })
@@ -495,7 +496,7 @@ describe('collections integration', () => {
       isPublic: false,
     })
 
-    const response = await agent.post(`/collections/${collection._id}/sentences`).send({
+    const response = await agent.post(`/collections/${collection._id.toString()}/sentences`).send({
       text: 'Ich {{reise}} morgen.',
       translation: 'I travel tomorrow.',
       alternativeAnswers: ['reise'],
@@ -530,7 +531,7 @@ describe('collections integration', () => {
       isPublic: false,
     })
 
-    const response = await agent.post(`/collections/${collection._id}/sentences`).send({
+    const response = await agent.post(`/collections/${collection._id.toString()}/sentences`).send({
       text: 'Ich {{reise}} morgen.',
       translation: 'I travel tomorrow.',
       cloze: 'wrong',
@@ -561,15 +562,17 @@ describe('collections integration', () => {
       translation: 'I travel tomorrow.',
     })
 
-    const response = await agent.patch(`/collections/${collection._id}/sentences/${sentence._id}`).send({
-      text: 'Ich {{lerne}} heute.',
-      translation: 'I learn today.',
-      cloze: 'wrong',
-      alternativeAnswers: ['lerne'],
-      multipleChoiceOptions: ['lerne', 'reise'],
-      hint: 'verb',
-      notes: 'present tense',
-    })
+    const response = await agent
+      .patch(`/collections/${collection._id.toString()}/sentences/${sentence._id.toString()}`)
+      .send({
+        text: 'Ich {{lerne}} heute.',
+        translation: 'I learn today.',
+        cloze: 'wrong',
+        alternativeAnswers: ['lerne'],
+        multipleChoiceOptions: ['lerne', 'reise'],
+        hint: 'verb',
+        notes: 'present tense',
+      })
 
     expect(response.status).toBe(200)
     expect(response.body.data).toMatchObject({
@@ -605,10 +608,12 @@ describe('collections integration', () => {
       translation: 'I travel tomorrow.',
     })
 
-    const response = await agent.patch(`/collections/${collection._id}/sentences/${sentence._id}`).send({
-      text: 'Ich {{reise}} {{morgen}}.',
-      translation: 'I travel tomorrow.',
-    })
+    const response = await agent
+      .patch(`/collections/${collection._id.toString()}/sentences/${sentence._id.toString()}`)
+      .send({
+        text: 'Ich {{reise}} {{morgen}}.',
+        translation: 'I travel tomorrow.',
+      })
 
     expect(response.status).toBe(400)
     expect(response.body.error.code).toBe('VALIDATION_ERROR')
@@ -633,7 +638,7 @@ describe('collections integration', () => {
       isPublic: true,
     })
 
-    const response = await agent.post(`/collections/${collection._id}/sentences`).send({
+    const response = await agent.post(`/collections/${collection._id.toString()}/sentences`).send({
       text: 'Ich {{reise}} morgen.',
       translation: 'I travel tomorrow.',
       cloze: 'reise',
@@ -642,5 +647,4 @@ describe('collections integration', () => {
     expect(response.status).toBe(403)
     expect(response.body.error.code).toBe('FORBIDDEN')
   })
-
 })

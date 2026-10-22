@@ -1,10 +1,11 @@
-const {
+import { describe, expect, it, vi } from 'vite-plus/test'
+import {
   collectionGroupImportDocument,
   collectionImportDocument,
   normalizeImportSentences,
   resolveImportOwner,
   resolveLanguagePairImport,
-} = require('../../lib/admin-import-pipeline')
+} from '../../lib/admin-import-pipeline.js'
 
 describe('admin import pipeline', () => {
   it('resolves import owners with typed errors', async () => {
@@ -23,7 +24,7 @@ describe('admin import pipeline', () => {
     })
     await expect(
       resolveImportOwner('user-id', {
-        UserModel: { findById: jest.fn().mockResolvedValue(null) },
+        UserModel: { findById: vi.fn().mockResolvedValue(null) },
         isValidObjectId: () => true,
       })
     ).rejects.toMatchObject({
@@ -34,7 +35,7 @@ describe('admin import pipeline', () => {
     const user = { _id: 'user-id' }
     await expect(
       resolveImportOwner('user-id', {
-        UserModel: { findById: jest.fn().mockResolvedValue(user) },
+        UserModel: { findById: vi.fn().mockResolvedValue(user) },
         isValidObjectId: () => true,
       })
     ).resolves.toBe(user)
@@ -42,10 +43,7 @@ describe('admin import pipeline', () => {
 
   it('resolves language pair import documents', async () => {
     const LanguageModel = {
-      findOne: jest
-        .fn()
-        .mockResolvedValueOnce({ _id: 'target-id' })
-        .mockResolvedValueOnce({ _id: 'base-id' }),
+      findOne: vi.fn().mockResolvedValueOnce({ _id: 'target-id' }).mockResolvedValueOnce({ _id: 'base-id' }),
     }
 
     await expect(
@@ -72,7 +70,7 @@ describe('admin import pipeline', () => {
 
   it('rejects language pair imports when a language is missing', async () => {
     const LanguageModel = {
-      findOne: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ _id: 'base-id' }),
+      findOne: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce({ _id: 'base-id' }),
     }
 
     await expect(
@@ -156,9 +154,11 @@ describe('admin import pipeline', () => {
         collectionId: 'collection-id',
         owner: { _id: 'owner-id' },
       })
-    ).toThrow(expect.objectContaining({
-      code: 'VALIDATION_ERROR',
-      details: [{ field: 'sentences.0.cloze', message: 'Sentence cloze is required.' }],
-    }))
+    ).toThrow(
+      expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+        details: [{ field: 'sentences.0.cloze', message: 'Sentence cloze is required.' }],
+      })
+    )
   })
 })

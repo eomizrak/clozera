@@ -1,5 +1,5 @@
-const User = require('../models/user')
-const LanguagePair = require('../models/language-pair')
+import User from '../models/user.js'
+import LanguagePair from '../models/language-pair.js'
 
 function languagePairNotFoundError() {
   const error = new Error('Language pair not found.')
@@ -85,9 +85,4 @@ async function updateCurrentUser(userId, payload = {}) {
     .populate('languagePairs')
 }
 
-module.exports = {
-  getCurrentUser,
-  registerUser,
-  serializeUser,
-  updateCurrentUser,
-}
+export { getCurrentUser, registerUser, serializeUser, updateCurrentUser }

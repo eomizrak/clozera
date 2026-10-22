@@ -1,15 +1,15 @@
-const Collection = require('../models/collection')
-const CollectionGroup = require('../models/collection-group')
-const CollectionSentence = require('../models/collection-sentence')
-const Language = require('../models/language')
-const LanguagePair = require('../models/language-pair')
-const {
+import Collection from '../models/collection.js'
+import CollectionGroup from '../models/collection-group.js'
+import CollectionSentence from '../models/collection-sentence.js'
+import Language from '../models/language.js'
+import LanguagePair from '../models/language-pair.js'
+import {
   collectionGroupImportDocument,
   collectionImportDocument,
   normalizeImportSentences,
   resolveImportOwner,
   resolveLanguagePairImport,
-} = require('../lib/admin-import-pipeline')
+} from '../lib/admin-import-pipeline.js'
 
 function collectionNotFoundError() {
   const error = new Error('Collection not found.')
@@ -77,9 +77,4 @@ async function importCollectionSentences(collectionId, sentences = [], ownerId) 
   return createdSentences
 }
 
-module.exports = {
-  importCollectionSentences,
-  importCollections,
-  importLanguagePairs,
-  importLanguages,
-}
+export { importCollectionSentences, importCollections, importLanguagePairs, importLanguages }

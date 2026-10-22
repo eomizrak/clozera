@@ -1,4 +1,4 @@
-const adminService = require('../services/admin-service')
+import * as adminService from '../services/admin-service.js'
 
 async function importLanguages(req, res, next) {
   try {
@@ -42,9 +42,4 @@ async function importCollectionSentences(req, res, next) {
   }
 }
 
-module.exports = {
-  importLanguages,
-  importLanguagePairs,
-  importCollections,
-  importCollectionSentences,
-}
+export { importLanguages, importLanguagePairs, importCollections, importCollectionSentences }

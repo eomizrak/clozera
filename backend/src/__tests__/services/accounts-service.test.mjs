@@ -1,4 +1,5 @@
-const accountsService = require('../../services/accounts-service')
+import { describe, expect, it } from 'vite-plus/test'
+import * as accountsService from '../../services/accounts-service.js'
 
 describe('accounts service', () => {
   it('serializes public user fields', () => {

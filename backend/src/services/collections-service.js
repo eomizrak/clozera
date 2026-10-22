@@ -1,9 +1,9 @@
-const Collection = require('../models/collection')
-const CollectionSentence = require('../models/collection-sentence')
-const LanguagePair = require('../models/language-pair')
-const User = require('../models/user')
-const { resolveActiveLanguagePair } = require('../lib/active-language-pair')
-const {
+import Collection from '../models/collection.js'
+import CollectionSentence from '../models/collection-sentence.js'
+import LanguagePair from '../models/language-pair.js'
+import User from '../models/user.js'
+import { resolveActiveLanguagePair } from '../lib/active-language-pair.js'
+import {
   collectionAccessConditions,
   collectionCapabilities,
   collectionRelationship,
@@ -11,8 +11,8 @@ const {
   pinnedCollectionIds,
   userId,
   userWithPinnedCollection,
-} = require('../lib/collection-capabilities')
-const { normalizeSentencePayload } = require('../lib/sentence-authoring')
+} from '../lib/collection-capabilities.js'
+import { normalizeSentencePayload } from '../lib/sentence-authoring.js'
 
 function collectionNotFoundError() {
   const error = new Error('Collection not found.')
@@ -166,17 +166,16 @@ async function listCollections({ languagePair, owner, page = 1, perPage = 20, us
       .limit(normalizedPerPage),
   ])
 
-  const sortedCollections = [...collections]
-    .sort((left, right) => {
-      const leftGroupOrder = left.group?.order ?? Number.MAX_SAFE_INTEGER
-      const rightGroupOrder = right.group?.order ?? Number.MAX_SAFE_INTEGER
+  const sortedCollections = [...collections].sort((left, right) => {
+    const leftGroupOrder = left.group?.order ?? Number.MAX_SAFE_INTEGER
+    const rightGroupOrder = right.group?.order ?? Number.MAX_SAFE_INTEGER
 
-      if (leftGroupOrder !== rightGroupOrder) {
-        return leftGroupOrder - rightGroupOrder
-      }
+    if (leftGroupOrder !== rightGroupOrder) {
+      return leftGroupOrder - rightGroupOrder
+    }
 
-      return (left.order ?? 0) - (right.order ?? 0)
-    })
+    return (left.order ?? 0) - (right.order ?? 0)
+  })
 
   return {
     collections: sortedCollections.map(collection => serializeCollection(collection, user)),
@@ -345,10 +344,7 @@ async function deleteCollection(collectionId, user) {
 
   await CollectionSentence.deleteMany({ collection: collection._id })
   await Collection.deleteOne({ _id: collection._id })
-  await User.updateMany(
-    { pinnedCollections: collection._id },
-    { $pull: { pinnedCollections: collection._id } }
-  )
+  await User.updateMany({ pinnedCollections: collection._id }, { $pull: { pinnedCollections: collection._id } })
 }
 
 async function listDashboardCollections({ languagePair, user }) {
@@ -517,7 +513,7 @@ async function listSentences({ collectionId, query, context, page = 1, perPage =
   }
 }
 
-module.exports = {
+export {
   createCollection,
   createSentence,
   deleteCollection,

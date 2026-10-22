@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 
 const collectionGroupSchema = new mongoose.Schema(
   {
@@ -18,4 +18,4 @@ const collectionGroupSchema = new mongoose.Schema(
 
 collectionGroupSchema.index({ languagePair: 1, order: 1 })
 
-module.exports = mongoose.model('CollectionGroup', collectionGroupSchema)
+export default mongoose.model('CollectionGroup', collectionGroupSchema)

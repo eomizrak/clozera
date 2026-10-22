@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 
 const languageSchema = new mongoose.Schema(
   {
@@ -13,4 +13,4 @@ const languageSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-module.exports = mongoose.model('Language', languageSchema)
+export default mongoose.model('Language', languageSchema)

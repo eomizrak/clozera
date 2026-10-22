@@ -1,10 +1,10 @@
-const request = require('supertest')
-
-const app = require('../../app')
-const Language = require('../../models/language')
-const LanguagePair = require('../../models/language-pair')
-const { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } = require('../../test-utils/test-database')
-const { loginAs } = require('../../test-utils/auth')
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test'
+import request from 'supertest'
+import app from '../../app.js'
+import Language from '../../models/language.js'
+import LanguagePair from '../../models/language-pair.js'
+import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from '../../test-utils/test-database.js'
+import { loginAs } from '../../test-utils/auth.js'
 
 describe('languages integration', () => {
   beforeAll(async () => {

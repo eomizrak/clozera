@@ -1,5 +1,1 @@
-const { serializeUser } = require('./users-service')
-
-module.exports = {
-  serializeUser,
-}
+export { serializeUser } from './users-service.js'

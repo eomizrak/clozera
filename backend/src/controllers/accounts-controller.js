@@ -1,6 +1,6 @@
-const passport = require('passport')
-const accountsService = require('../services/accounts-service')
-const usersService = require('../services/users-service')
+import passport from 'passport'
+import * as accountsService from '../services/accounts-service.js'
+import * as usersService from '../services/users-service.js'
 
 function login(req, res, next) {
   passport.authenticate('local', (error, user, info) => {
@@ -49,8 +49,4 @@ function logout(req, res, next) {
   })
 }
 
-module.exports = {
-  login,
-  getSession,
-  logout,
-}
+export { login, getSession, logout }

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 
 async function connectTestDatabase() {
   if (mongoose.connection.readyState === 1) {
@@ -33,8 +33,4 @@ async function disconnectTestDatabase() {
   }
 }
 
-module.exports = {
-  clearTestDatabase,
-  connectTestDatabase,
-  disconnectTestDatabase,
-}
+export { clearTestDatabase, connectTestDatabase, disconnectTestDatabase }

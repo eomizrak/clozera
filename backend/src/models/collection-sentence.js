@@ -1,5 +1,5 @@
-const mongoose = require('mongoose')
-const { extractClozeFromText } = require('../lib/sentence-authoring')
+import mongoose from 'mongoose'
+import { extractClozeFromText } from '../lib/sentence-authoring.js'
 
 const collectionSentenceSchema = new mongoose.Schema(
   {
@@ -56,4 +56,4 @@ collectionSentenceSchema.pre(['findOneAndUpdate', 'updateOne', 'updateMany'], fu
   this.setUpdate(clozeSyncedUpdate(this.getUpdate()))
 })
 
-module.exports = mongoose.model('CollectionSentence', collectionSentenceSchema)
+export default mongoose.model('CollectionSentence', collectionSentenceSchema)

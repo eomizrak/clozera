@@ -1,5 +1,5 @@
-const request = require('supertest')
-const User = require('../models/user')
+import request from 'supertest'
+import User from '../models/user.js'
 
 async function createUser(overrides = {}) {
   const password = overrides.password || 'secret123'
@@ -34,7 +34,4 @@ async function loginAs(app, overrides = {}) {
   }
 }
 
-module.exports = {
-  createUser,
-  loginAs,
-}
+export { createUser, loginAs }

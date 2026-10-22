@@ -1,6 +1,6 @@
-const express = require('express')
-const adminController = require('../controllers/admin-controller')
-const { requireAdmin } = require('../middleware/auth')
+import express from 'express'
+import * as adminController from '../controllers/admin-controller.js'
+import { requireAdmin } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -9,4 +9,4 @@ router.post('/admin/language-pairs/import', requireAdmin, adminController.import
 router.post('/admin/collections/import', requireAdmin, adminController.importCollections)
 router.post('/admin/collections/:id/sentences/import', requireAdmin, adminController.importCollectionSentences)
 
-module.exports = router
+export default router

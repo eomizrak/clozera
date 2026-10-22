@@ -1,8 +1,7 @@
-const mongoose = require('mongoose')
-
-const Language = require('../models/language')
-const User = require('../models/user')
-const { normalizeSentencePayload } = require('./sentence-authoring')
+import mongoose from 'mongoose'
+import Language from '../models/language.js'
+import User from '../models/user.js'
+import { normalizeSentencePayload } from './sentence-authoring.js'
 
 function languageNotFoundError(identifier) {
   const error = new Error(`Language not found: ${identifier}`)
@@ -119,7 +118,7 @@ function normalizeImportSentences(sentences = [], { collectionId, owner }) {
   })
 }
 
-module.exports = {
+export {
   collectionGroupImportDocument,
   collectionImportDocument,
   findLanguage,

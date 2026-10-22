@@ -1,4 +1,4 @@
-const languagesService = require('../services/languages-service')
+import * as languagesService from '../services/languages-service.js'
 
 async function listLanguages(req, res, next) {
   try {
@@ -16,7 +16,4 @@ async function listLanguagePairs(req, res, next) {
   }
 }
 
-module.exports = {
-  listLanguages,
-  listLanguagePairs,
-}
+export { listLanguages, listLanguagePairs }

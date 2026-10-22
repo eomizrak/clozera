@@ -36,7 +36,4 @@ function requireAdmin(req, res, next) {
   return next()
 }
 
-module.exports = {
-  requireAuth,
-  requireAdmin,
-}
+export { requireAuth, requireAdmin }

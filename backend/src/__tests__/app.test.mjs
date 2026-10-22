@@ -1,16 +1,16 @@
-const request = require('supertest')
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import request from 'supertest'
+import * as languagesService from '../services/languages-service.js'
+import app from '../app.js'
 
-jest.mock('../services/languages-service', () => ({
-  listLanguages: jest.fn(),
-  listLanguagePairs: jest.fn(),
-}))
+vi.spyOn(languagesService, 'listLanguages').mockImplementation(() => undefined)
+vi.spyOn(languagesService, 'listLanguagePairs').mockImplementation(() => undefined)
 
-const languagesService = require('../services/languages-service')
-const app = require('../app')
+afterAll(() => vi.restoreAllMocks())
 
 describe('app routes', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('returns the current anonymous session', async () => {

@@ -1,8 +1,5 @@
-const {
-  extractClozeFromText,
-  normalizeSentenceList,
-  normalizeSentencePayload,
-} = require('../../lib/sentence-authoring')
+import { describe, expect, it } from 'vite-plus/test'
+import { extractClozeFromText, normalizeSentenceList, normalizeSentencePayload } from '../../lib/sentence-authoring.js'
 
 describe('sentence authoring', () => {
   it('extracts exactly one non-empty cloze marker', () => {

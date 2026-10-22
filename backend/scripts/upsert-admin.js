@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
+import dotenv from 'dotenv'
+import User from '../src/models/user.js'
 
 const dotenvOptions = { quiet: true }
 
@@ -8,9 +10,7 @@ if (process.env.DOTENV_CONFIG_PATH) {
   dotenvOptions.path = process.env.DOTENV_CONFIG_PATH
 }
 
-require('dotenv').config(dotenvOptions)
-
-const User = require('../src/models/user')
+dotenv.config(dotenvOptions)
 
 async function connectDatabase() {
   if (!process.env.MONGODB_CONNECTION_STRING) {

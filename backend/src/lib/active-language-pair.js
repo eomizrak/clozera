@@ -1,4 +1,4 @@
-const LanguagePair = require('../models/language-pair')
+import LanguagePair from '../models/language-pair.js'
 
 async function resolveActiveLanguagePair(user) {
   if (user?.selectedLanguagePair) {
@@ -13,6 +13,4 @@ async function resolveActiveLanguagePair(user) {
   return LanguagePair.findOne({ active: true }).sort({ name: 1 })
 }
 
-module.exports = {
-  resolveActiveLanguagePair,
-}
+export { resolveActiveLanguagePair }

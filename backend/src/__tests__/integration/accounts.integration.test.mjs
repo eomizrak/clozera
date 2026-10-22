@@ -1,10 +1,10 @@
-const request = require('supertest')
-
-const app = require('../../app')
-const Language = require('../../models/language')
-const LanguagePair = require('../../models/language-pair')
-const User = require('../../models/user')
-const { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } = require('../../test-utils/test-database')
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vite-plus/test'
+import request from 'supertest'
+import app from '../../app.js'
+import Language from '../../models/language.js'
+import LanguagePair from '../../models/language-pair.js'
+import User from '../../models/user.js'
+import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from '../../test-utils/test-database.js'
 
 describe('accounts integration', () => {
   beforeAll(async () => {
@@ -177,5 +177,4 @@ describe('accounts integration', () => {
     expect(response.status).toBe(401)
     expect(response.body.error.code).toBe('INVALID_CREDENTIALS')
   })
-
 })

@@ -1,4 +1,4 @@
-const collectionsService = require('../services/collections-service')
+import * as collectionsService from '../services/collections-service.js'
 
 async function listCollections(req, res, next) {
   try {
@@ -135,7 +135,7 @@ async function listSentences(req, res, next) {
   }
 }
 
-module.exports = {
+export {
   createCollection,
   createSentence,
   deleteCollection,

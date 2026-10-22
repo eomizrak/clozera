@@ -1,8 +1,15 @@
 #!/usr/bin/env node
 
-const fs = require('fs/promises')
-const path = require('path')
-const mongoose = require('mongoose')
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import mongoose from 'mongoose'
+import dotenv from 'dotenv'
+import Collection from '../src/models/collection.js'
+import CollectionGroup from '../src/models/collection-group.js'
+import CollectionSentence from '../src/models/collection-sentence.js'
+import Language from '../src/models/language.js'
+import LanguagePair from '../src/models/language-pair.js'
+import User from '../src/models/user.js'
 
 const dotenvOptions = { quiet: true }
 
@@ -10,16 +17,9 @@ if (process.env.DOTENV_CONFIG_PATH) {
   dotenvOptions.path = process.env.DOTENV_CONFIG_PATH
 }
 
-require('dotenv').config(dotenvOptions)
+dotenv.config(dotenvOptions)
 
-const Collection = require('../src/models/collection')
-const CollectionGroup = require('../src/models/collection-group')
-const CollectionSentence = require('../src/models/collection-sentence')
-const Language = require('../src/models/language')
-const LanguagePair = require('../src/models/language-pair')
-const User = require('../src/models/user')
-
-const seedPath = process.env.SEED_FILE || path.join(__dirname, '..', 'data', 'seeds', 'initial-seed.json')
+const seedPath = process.env.SEED_FILE || path.join(import.meta.dirname, '..', 'data', 'seeds', 'initial-seed.json')
 
 async function connectDatabase() {
   if (!process.env.MONGODB_CONNECTION_STRING) {

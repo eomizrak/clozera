@@ -1,27 +1,18 @@
-const mockRegister = jest.fn()
-const mockFindById = jest.fn()
-const mockFindByIdAndUpdate = jest.fn()
-const mockLanguagePairFindOne = jest.fn()
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import User from '../../models/user.js'
+import LanguagePair from '../../models/language-pair.js'
+import * as usersService from '../../services/users-service.js'
 
-function MockUser(payload) {
-  Object.assign(this, payload)
-}
+const mockRegister = vi.spyOn(User, 'register').mockImplementation(() => undefined)
+const mockFindById = vi.spyOn(User, 'findById').mockImplementation(() => undefined)
+const mockFindByIdAndUpdate = vi.spyOn(User, 'findByIdAndUpdate').mockImplementation(() => undefined)
+const mockLanguagePairFindOne = vi.spyOn(LanguagePair, 'findOne').mockImplementation(() => undefined)
 
-MockUser.register = mockRegister
-MockUser.findById = mockFindById
-MockUser.findByIdAndUpdate = mockFindByIdAndUpdate
-
-jest.mock('../../models/user', () => MockUser)
-
-jest.mock('../../models/language-pair', () => ({
-  findOne: mockLanguagePairFindOne,
-}))
-
-const usersService = require('../../services/users-service')
+afterAll(() => vi.restoreAllMocks())
 
 describe('users service', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('registers a user and falls back to username when name is missing', async () => {
@@ -45,8 +36,8 @@ describe('users service', () => {
 
   it('gets the current user with selected and saved language pairs populated', async () => {
     const user = { id: 'user-id' }
-    const secondPopulate = jest.fn().mockResolvedValue(user)
-    const populate = jest.fn().mockReturnValue({ populate: secondPopulate })
+    const secondPopulate = vi.fn().mockResolvedValue(user)
+    const populate = vi.fn().mockReturnValue({ populate: secondPopulate })
     mockFindById.mockReturnValue({ populate })
 
     await expect(usersService.getCurrentUser('user-id')).resolves.toBe(user)
@@ -58,8 +49,8 @@ describe('users service', () => {
 
   it('updates current user profile fields', async () => {
     const updatedUser = { id: 'user-id', name: 'Ada L.', username: 'ada', timezone: 'Europe/Berlin' }
-    const secondPopulate = jest.fn().mockResolvedValue(updatedUser)
-    const populate = jest.fn().mockReturnValue({ populate: secondPopulate })
+    const secondPopulate = vi.fn().mockResolvedValue(updatedUser)
+    const populate = vi.fn().mockReturnValue({ populate: secondPopulate })
     mockFindByIdAndUpdate.mockReturnValue({ populate })
 
     await expect(
@@ -87,8 +78,8 @@ describe('users service', () => {
     const pair = { _id: 'pair-id', slug: 'deu-eng' }
     const updatedUser = { id: 'user-id', selectedLanguagePair: pair }
     mockLanguagePairFindOne.mockResolvedValue(pair)
-    const secondPopulate = jest.fn().mockResolvedValue(updatedUser)
-    const populate = jest.fn().mockReturnValue({ populate: secondPopulate })
+    const secondPopulate = vi.fn().mockResolvedValue(updatedUser)
+    const populate = vi.fn().mockReturnValue({ populate: secondPopulate })
     mockFindByIdAndUpdate.mockReturnValue({ populate })
 
     await expect(usersService.updateCurrentUser('user-id', { selectedLanguagePairSlug: 'deu-eng' })).resolves.toBe(

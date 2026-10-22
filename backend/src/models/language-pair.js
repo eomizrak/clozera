@@ -1,4 +1,4 @@
-const mongoose = require('mongoose')
+import mongoose from 'mongoose'
 
 const languagePairSchema = new mongoose.Schema(
   {
@@ -20,4 +20,4 @@ const languagePairSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-module.exports = mongoose.model('LanguagePair', languagePairSchema)
+export default mongoose.model('LanguagePair', languagePairSchema)

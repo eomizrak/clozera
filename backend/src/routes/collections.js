@@ -1,6 +1,6 @@
-const express = require('express')
-const collectionsController = require('../controllers/collections-controller')
-const { requireAuth } = require('../middleware/auth')
+import express from 'express'
+import * as collectionsController from '../controllers/collections-controller.js'
+import { requireAuth } from '../middleware/auth.js'
 
 const router = express.Router()
 
@@ -16,4 +16,4 @@ router.get('/collections/:id/sentences', requireAuth, collectionsController.list
 router.post('/collections/:id/sentences', requireAuth, collectionsController.createSentence)
 router.patch('/collections/:id/sentences/:sentenceId', requireAuth, collectionsController.updateSentence)
 
-module.exports = router
+export default router

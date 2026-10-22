@@ -1,31 +1,21 @@
-const createError = require('http-errors')
-const express = require('express')
-const path = require('path')
-const cookieParser = require('cookie-parser')
-const logger = require('morgan')
-const cors = require('cors')
-const session = require('express-session')
-const MongoStore = require('connect-mongo').default
-const mongoose = require('mongoose')
-const passport = require('passport')
-
-const dotenvOptions = { quiet: process.env.NODE_ENV === 'test' }
-
-if (process.env.DOTENV_CONFIG_PATH) {
-  dotenvOptions.path = process.env.DOTENV_CONFIG_PATH
-}
-
-require('dotenv').config(dotenvOptions)
-
-require('./database-connection')
-
-const accountsRouter = require('./routes/accounts')
-const adminRouter = require('./routes/admin')
-const collectionsRouter = require('./routes/collections')
-const languagesRouter = require('./routes/languages')
-const usersRouter = require('./routes/users')
-
-const User = require('./models/user')
+import './config/environment.js'
+import createError from 'http-errors'
+import express from 'express'
+import path from 'node:path'
+import cookieParser from 'cookie-parser'
+import logger from 'morgan'
+import cors from 'cors'
+import session from 'express-session'
+import MongoStore from 'connect-mongo'
+import mongoose from 'mongoose'
+import passport from 'passport'
+import './database-connection.js'
+import accountsRouter from './routes/accounts.js'
+import adminRouter from './routes/admin.js'
+import collectionsRouter from './routes/collections.js'
+import languagesRouter from './routes/languages.js'
+import usersRouter from './routes/users.js'
+import User from './models/user.js'
 
 passport.use(User.createStrategy())
 passport.serializeUser(User.serializeUser())
@@ -80,7 +70,7 @@ app.use(cookieParser())
 app.use(sessionMiddleware)
 app.use(passport.initialize())
 app.use(passport.session())
-app.use(express.static(path.join(__dirname, 'public')))
+app.use(express.static(path.join(import.meta.dirname, 'public')))
 
 app.use('/accounts', accountsRouter)
 app.use(languagesRouter)
@@ -94,7 +84,7 @@ app.use(function (req, res, next) {
 })
 
 // error handler
-// eslint-disable-next-line no-unused-vars
+// oxlint-disable-next-line no-unused-vars
 app.use(function (err, req, res, next) {
   if (!isTest) {
     console.log(err)
@@ -110,4 +100,4 @@ app.use(function (err, req, res, next) {
   })
 })
 
-module.exports = app
+export default app

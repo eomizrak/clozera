@@ -1,76 +1,48 @@
-const mockCollectionFind = jest.fn()
-const mockCollectionFindOne = jest.fn()
-const mockCollectionCreate = jest.fn()
-const mockCollectionCountDocuments = jest.fn()
-const mockCollectionDeleteOne = jest.fn()
-const mockCollectionSentenceCountDocuments = jest.fn()
-const mockCollectionSentenceCreate = jest.fn()
-const mockCollectionSentenceDeleteMany = jest.fn()
-const mockCollectionSentenceFind = jest.fn()
-const mockCollectionSentenceFindOne = jest.fn()
-const mockLanguagePairFindOne = jest.fn()
-const mockResolveActiveLanguagePair = jest.fn()
-const mockUserFindByIdAndUpdate = jest.fn()
-const mockUserUpdateMany = jest.fn()
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import Collection from '../../models/collection.js'
+import CollectionSentence from '../../models/collection-sentence.js'
+import LanguagePair from '../../models/language-pair.js'
+import User from '../../models/user.js'
+import * as activeLanguagePair from '../../lib/active-language-pair.js'
+import * as collectionsService from '../../services/collections-service.js'
 
-jest.mock('../../models/collection', () => ({
-  countDocuments: mockCollectionCountDocuments,
-  create: mockCollectionCreate,
-  deleteOne: mockCollectionDeleteOne,
-  find: mockCollectionFind,
-  findOne: mockCollectionFindOne,
-}))
+const mockCollectionFind = vi.spyOn(Collection, 'find').mockImplementation(() => undefined)
+const mockCollectionFindOne = vi.spyOn(Collection, 'findOne').mockImplementation(() => undefined)
+const mockCollectionCreate = vi.spyOn(Collection, 'create').mockImplementation(() => undefined)
+const mockCollectionCountDocuments = vi.spyOn(Collection, 'countDocuments').mockImplementation(() => undefined)
+vi.spyOn(Collection, 'deleteOne').mockImplementation(() => undefined)
+const mockCollectionSentenceCountDocuments = vi
+  .spyOn(CollectionSentence, 'countDocuments')
+  .mockImplementation(() => undefined)
+const mockCollectionSentenceCreate = vi.spyOn(CollectionSentence, 'create').mockImplementation(() => undefined)
+vi.spyOn(CollectionSentence, 'deleteMany').mockImplementation(() => undefined)
+const mockCollectionSentenceFind = vi.spyOn(CollectionSentence, 'find').mockImplementation(() => undefined)
+const mockCollectionSentenceFindOne = vi.spyOn(CollectionSentence, 'findOne').mockImplementation(() => undefined)
+const mockLanguagePairFindOne = vi.spyOn(LanguagePair, 'findOne').mockImplementation(() => undefined)
+vi.spyOn(activeLanguagePair, 'resolveActiveLanguagePair').mockImplementation(() => undefined)
+const mockUserFindByIdAndUpdate = vi.spyOn(User, 'findByIdAndUpdate').mockImplementation(() => undefined)
+vi.spyOn(User, 'updateMany').mockImplementation(() => undefined)
 
-jest.mock('../../models/collection-sentence', () => ({
-  countDocuments: mockCollectionSentenceCountDocuments,
-  create: mockCollectionSentenceCreate,
-  deleteMany: mockCollectionSentenceDeleteMany,
-  extractClozeFromText: text => {
-    const matches = Array.from(String(text || '').matchAll(/\{\{(.*?)\}\}/g))
-
-    if (matches.length !== 1) {
-      return ''
-    }
-
-    return matches[0][1].trim()
-  },
-  find: mockCollectionSentenceFind,
-  findOne: mockCollectionSentenceFindOne,
-}))
-
-jest.mock('../../models/language-pair', () => ({
-  findOne: mockLanguagePairFindOne,
-}))
-
-jest.mock('../../models/user', () => ({
-  findByIdAndUpdate: mockUserFindByIdAndUpdate,
-  updateMany: mockUserUpdateMany,
-}))
-
-jest.mock('../../lib/active-language-pair', () => ({
-  resolveActiveLanguagePair: mockResolveActiveLanguagePair,
-}))
-
-const collectionsService = require('../../services/collections-service')
+afterAll(() => vi.restoreAllMocks())
 
 describe('collections service', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   function collectionFindChain(result) {
-    const limit = jest.fn().mockResolvedValue(result)
-    const skip = jest.fn().mockReturnValue({ limit })
-    const sort = jest.fn().mockReturnValue({ skip })
-    const populate = jest.fn().mockReturnValue({ sort })
+    const limit = vi.fn().mockResolvedValue(result)
+    const skip = vi.fn().mockReturnValue({ limit })
+    const sort = vi.fn().mockReturnValue({ skip })
+    const populate = vi.fn().mockReturnValue({ sort })
     mockCollectionFind.mockReturnValue({ populate })
     return { limit, populate, skip, sort }
   }
 
   function sentenceFindChain(result) {
-    const limit = jest.fn().mockResolvedValue(result)
-    const skip = jest.fn().mockReturnValue({ limit })
-    const sort = jest.fn().mockReturnValue({ skip })
+    const limit = vi.fn().mockResolvedValue(result)
+    const skip = vi.fn().mockReturnValue({ limit })
+    const sort = vi.fn().mockReturnValue({ skip })
     mockCollectionSentenceFind.mockReturnValue({ sort })
     return { limit, skip, sort }
   }
@@ -210,7 +182,7 @@ describe('collections service', () => {
 
   it('lists dashboard collections for the requested language pair', async () => {
     const pair = { _id: 'pair-id' }
-    const populate = jest.fn().mockResolvedValue([])
+    const populate = vi.fn().mockResolvedValue([])
     mockLanguagePairFindOne.mockResolvedValue(pair)
     mockCollectionFind.mockReturnValue({ populate })
 
@@ -418,7 +390,7 @@ describe('collections service', () => {
       _id: 'collection-id',
       owner: 'user-id',
       isOfficial: false,
-      save: jest.fn(),
+      save: vi.fn(),
     }
     mockCollectionFindOne.mockResolvedValue(collection)
 
@@ -441,14 +413,12 @@ describe('collections service', () => {
   })
 
   it('rejects collection metadata changes for non-owners with forbidden even when private', async () => {
-    mockCollectionFindOne
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({
-        _id: 'collection-id',
-        owner: 'other-user-id',
-        isOfficial: false,
-        isPublic: false,
-      })
+    mockCollectionFindOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      _id: 'collection-id',
+      owner: 'other-user-id',
+      isOfficial: false,
+      isPublic: false,
+    })
 
     await expect(
       collectionsService.updateCollection(
@@ -475,7 +445,7 @@ describe('collections service', () => {
     const collection = {
       _id: 'collection-id',
       sentenceCount: 2,
-      save: jest.fn().mockResolvedValue(undefined),
+      save: vi.fn().mockResolvedValue(undefined),
     }
     const createdSentence = {
       id: 'sentence-id',
@@ -527,7 +497,7 @@ describe('collections service', () => {
     const collection = {
       _id: 'collection-id',
       sentenceCount: 0,
-      save: jest.fn().mockResolvedValue(undefined),
+      save: vi.fn().mockResolvedValue(undefined),
     }
     mockCollectionFindOne.mockResolvedValue(collection)
     mockCollectionSentenceCreate.mockResolvedValue({
@@ -567,7 +537,7 @@ describe('collections service', () => {
     mockCollectionFindOne.mockResolvedValue({
       _id: 'collection-id',
       sentenceCount: 0,
-      save: jest.fn().mockResolvedValue(undefined),
+      save: vi.fn().mockResolvedValue(undefined),
     })
 
     await expect(
@@ -601,7 +571,7 @@ describe('collections service', () => {
       multipleChoiceOptions: [],
       hint: '',
       notes: '',
-      save: jest.fn().mockImplementation(() => {
+      save: vi.fn().mockImplementation(() => {
         sentence.cloze = 'lerne'
         return Promise.resolve()
       }),
@@ -648,7 +618,7 @@ describe('collections service', () => {
     mockCollectionFindOne.mockResolvedValue({ _id: 'collection-id' })
     mockCollectionSentenceFindOne.mockResolvedValue({
       id: 'sentence-id',
-      save: jest.fn(),
+      save: vi.fn(),
     })
 
     await expect(

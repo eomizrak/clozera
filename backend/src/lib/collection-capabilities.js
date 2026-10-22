@@ -57,7 +57,7 @@ function userWithPinnedCollection(user, collectionId) {
   }
 }
 
-module.exports = {
+export {
   collectionAccessConditions,
   collectionCapabilities,
   collectionRelationship,

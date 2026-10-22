@@ -35,8 +35,4 @@ function normalizeSentencePayload(payload = {}) {
   }
 }
 
-module.exports = {
-  extractClozeFromText,
-  normalizeSentenceList,
-  normalizeSentencePayload,
-}
+export { extractClozeFromText, normalizeSentenceList, normalizeSentencePayload }
