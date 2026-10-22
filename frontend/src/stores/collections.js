@@ -35,7 +35,9 @@ export const useCollectionsStore = defineStore('collections', () => {
 
   const collectionShelves = computed(() => buildCollectionShelves(collections.value))
 
-  const groupedCollections = computed(() => collectionShelves.value.flatMap((shelf) => shelf.groups))
+  const groupedCollections = computed(() =>
+    collectionShelves.value.flatMap((shelf) => shelf.groups),
+  )
 
   async function loadCollections({ languagePair, owner, page = 1, perPage = 100 } = {}) {
     isLoading.value = true
@@ -151,7 +153,9 @@ export const useCollectionsStore = defineStore('collections', () => {
   }
 
   function upsertDashboardCollection(nextCollection) {
-    const exists = dashboardCollections.value.some((collection) => collection.id === nextCollection.id)
+    const exists = dashboardCollections.value.some(
+      (collection) => collection.id === nextCollection.id,
+    )
     dashboardCollections.value = exists
       ? dashboardCollections.value.map((collection) =>
           collection.id === nextCollection.id ? nextCollection : collection,
@@ -178,7 +182,9 @@ export const useCollectionsStore = defineStore('collections', () => {
     try {
       await api.delete(`/collections/${collectionId}`)
       collections.value = collections.value.filter((collection) => collection.id !== collectionId)
-      dashboardCollections.value = dashboardCollections.value.filter((collection) => collection.id !== collectionId)
+      dashboardCollections.value = dashboardCollections.value.filter(
+        (collection) => collection.id !== collectionId,
+      )
       if (activeCollection.value?.id === collectionId) {
         activeCollection.value = null
       }
@@ -217,7 +223,9 @@ export const useCollectionsStore = defineStore('collections', () => {
         replaceCollection(unpinnedCollection)
       }
 
-      dashboardCollections.value = dashboardCollections.value.filter((collection) => collection.id !== collectionId)
+      dashboardCollections.value = dashboardCollections.value.filter(
+        (collection) => collection.id !== collectionId,
+      )
       if (activeCollection.value?.id === collectionId) {
         activeCollection.value = unpinnedCollection || activeCollection.value
       }
@@ -249,7 +257,10 @@ export const useCollectionsStore = defineStore('collections', () => {
     error.value = ''
 
     try {
-      const response = await api.patch(`/collections/${collectionId}/sentences/${sentenceId}`, payload)
+      const response = await api.patch(
+        `/collections/${collectionId}/sentences/${sentenceId}`,
+        payload,
+      )
       return response.data.data
     } catch (updateError) {
       error.value = apiErrorMessage(updateError)

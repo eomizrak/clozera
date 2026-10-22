@@ -133,8 +133,12 @@ async function selectLanguagePairSlug(slug) {
           <template #value="{ value }">
             <span class="dashboard-navbar__pair-value">
               <span class="dashboard-navbar__flags" aria-hidden="true">
-                <span class="dashboard-navbar__flag">{{ flagEmoji(pairBySlug(value)?.targetLanguage) }}</span>
-                <span class="dashboard-navbar__flag">{{ flagEmoji(pairBySlug(value)?.baseLanguage) }}</span>
+                <span class="dashboard-navbar__flag">{{
+                  flagEmoji(pairBySlug(value)?.targetLanguage)
+                }}</span>
+                <span class="dashboard-navbar__flag">{{
+                  flagEmoji(pairBySlug(value)?.baseLanguage)
+                }}</span>
               </span>
               <span class="dashboard-navbar__pair-name">{{ pairTitle(pairBySlug(value)) }}</span>
             </span>
@@ -400,5 +404,4 @@ async function selectLanguagePairSlug(slug) {
     display: none;
   }
 }
-
 </style>

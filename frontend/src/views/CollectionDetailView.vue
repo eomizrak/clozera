@@ -8,7 +8,19 @@ import InputText from 'primevue/inputtext'
 import Message from 'primevue/message'
 import ProgressSpinner from 'primevue/progressspinner'
 import Textarea from 'primevue/textarea'
-import { ArrowLeft, Keyboard, ListChecks, Pencil, Pin, PinOff, Play, Plus, Rows3, Search, Trash2 } from '@lucide/vue'
+import {
+  ArrowLeft,
+  Keyboard,
+  ListChecks,
+  Pencil,
+  Pin,
+  PinOff,
+  Play,
+  Plus,
+  Rows3,
+  Search,
+  Trash2,
+} from '@lucide/vue'
 import DashboardNavbar from '@/components/DashboardNavbar.vue'
 import { PRACTICE_MODES } from '@/lib/practice-session'
 import {
@@ -292,8 +304,16 @@ onMounted(async () => {
             <button
               class="ui-button ui-button--icon-sm collection-detail-view__hero-action-button collection-detail-view__hero-action-button--play"
               type="button"
-              :aria-label="collection.sentenceCount ? `Practice ${collection.name}` : 'No sentences to practice'"
-              :title="collection.sentenceCount ? `Practice ${collection.name}` : 'No sentences to practice'"
+              :aria-label="
+                collection.sentenceCount
+                  ? `Practice ${collection.name}`
+                  : 'No sentences to practice'
+              "
+              :title="
+                collection.sentenceCount
+                  ? `Practice ${collection.name}`
+                  : 'No sentences to practice'
+              "
               :disabled="!collection.sentenceCount"
               @click="openPracticeDialog"
             >
@@ -506,11 +526,7 @@ onMounted(async () => {
           class="ui-button ui-button--primary collection-detail-view__create-submit"
           type="submit"
           label="Create sentence"
-          :disabled="
-            !newSentence.text.trim() ||
-            !newSentence.translation.trim() ||
-            !inferredCloze
-          "
+          :disabled="!newSentence.text.trim() || !newSentence.translation.trim() || !inferredCloze"
           :loading="collections.isCreatingSentence"
         />
       </form>
@@ -668,9 +684,7 @@ onMounted(async () => {
           type="submit"
           label="Save changes"
           :disabled="
-            !editSentence.text.trim() ||
-            !editSentence.translation.trim() ||
-            !editInferredCloze
+            !editSentence.text.trim() || !editSentence.translation.trim() || !editInferredCloze
           "
           :loading="collections.isUpdatingSentence"
         />

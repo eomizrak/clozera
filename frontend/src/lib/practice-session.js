@@ -11,12 +11,16 @@ export function practiceModeFromValue(value) {
 }
 
 export function normalizedAnswer(value) {
-  return String(value || '').trim().toLocaleLowerCase()
+  return String(value || '')
+    .trim()
+    .toLocaleLowerCase()
 }
 
 export function answerMatchesSentence(sentence, answer) {
   const normalized = normalizedAnswer(answer)
-  const acceptedAnswers = [sentence?.cloze, ...(sentence?.alternativeAnswers || [])].map(normalizedAnswer)
+  const acceptedAnswers = [sentence?.cloze, ...(sentence?.alternativeAnswers || [])].map(
+    normalizedAnswer,
+  )
 
   return Boolean(normalized && acceptedAnswers.includes(normalized))
 }
@@ -32,7 +36,11 @@ export function shuffledItems(items = [], random = Math.random) {
   return shuffled
 }
 
-export function sessionSentencesFromCollection(sentences = [], limit = DEFAULT_SESSION_LIMIT, random = Math.random) {
+export function sessionSentencesFromCollection(
+  sentences = [],
+  limit = DEFAULT_SESSION_LIMIT,
+  random = Math.random,
+) {
   return shuffledItems(sentences, random).slice(0, limit)
 }
 
@@ -43,12 +51,20 @@ export function choiceSlotsForSentence(
 ) {
   const correctAnswer = String(sentence?.cloze || '').trim()
   const distractors = shuffledItems(
-    Array.from(new Set((sentence?.multipleChoiceOptions || []).map((option) => String(option).trim()).filter(Boolean)))
-      .filter((option) => normalizedAnswer(option) !== normalizedAnswer(correctAnswer)),
+    Array.from(
+      new Set(
+        (sentence?.multipleChoiceOptions || [])
+          .map((option) => String(option).trim())
+          .filter(Boolean),
+      ),
+    ).filter((option) => normalizedAnswer(option) !== normalizedAnswer(correctAnswer)),
     random,
   ).slice(0, Math.max(choiceCount - 1, 0))
   const activeOptions = shuffledItems([correctAnswer, ...distractors].filter(Boolean), random)
-  const emptyOptions = Array.from({ length: Math.max(choiceCount - activeOptions.length, 0) }, () => '')
+  const emptyOptions = Array.from(
+    { length: Math.max(choiceCount - activeOptions.length, 0) },
+    () => '',
+  )
 
   return [...activeOptions, ...emptyOptions].map((label, index) => ({
     id: label ? `choice-${index}-${normalizedAnswer(label)}` : `empty-${index}`,

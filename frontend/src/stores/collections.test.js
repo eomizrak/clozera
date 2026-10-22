@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { createPinia, setActivePinia } from 'pinia'
 import { useCollectionsStore } from '@/stores/collections'
 
@@ -74,7 +74,9 @@ describe('collections store', () => {
       'Topics',
     ])
     expect(collections.collectionShelves[1].groups[0].collections[0].name).toBe('Food')
-    expect(collections.collectionShelves[2].groups[0].collections[0].creator.displayName).toBe('Grace Hopper')
+    expect(collections.collectionShelves[2].groups[0].collections[0].creator.displayName).toBe(
+      'Grace Hopper',
+    )
   })
 
   it('creates a collection', async () => {
@@ -132,7 +134,9 @@ describe('collections store', () => {
         languagePair: 'deu-eng',
       },
     })
-    expect(api.post).toHaveBeenCalledWith('/dashboard/collections', { collectionId: 'collection-2' })
+    expect(api.post).toHaveBeenCalledWith('/dashboard/collections', {
+      collectionId: 'collection-2',
+    })
     expect(api.delete).toHaveBeenCalledWith('/dashboard/collections/collection-1')
     expect(collections.dashboardCollections).toEqual([
       { id: 'collection-2', name: 'Travel', isPinned: true },
@@ -154,8 +158,12 @@ describe('collections store', () => {
     api.delete.mockResolvedValueOnce({})
 
     const collections = useCollectionsStore()
-    collections.collections = [{ id: 'collection-1', name: 'Draft Practice', visibility: 'private' }]
-    collections.dashboardCollections = [{ id: 'collection-1', name: 'Draft Practice', visibility: 'private' }]
+    collections.collections = [
+      { id: 'collection-1', name: 'Draft Practice', visibility: 'private' },
+    ]
+    collections.dashboardCollections = [
+      { id: 'collection-1', name: 'Draft Practice', visibility: 'private' },
+    ]
 
     const updated = await collections.updateCollection('collection-1', {
       name: 'Travel Practice',

@@ -62,7 +62,9 @@ const newCollection = reactive({
   isPublic: false,
 })
 
-const filteredShelves = computed(() => filterCollectionShelves(collections.collectionShelves, searchQuery.value))
+const filteredShelves = computed(() =>
+  filterCollectionShelves(collections.collectionShelves, searchQuery.value),
+)
 
 function saveDashboardState() {
   persistDashboardState({ section: activeSection.value })
@@ -135,7 +137,9 @@ async function submitCreateCollection() {
     createDialogVisible.value = false
     await Promise.all([
       loadDashboardCollections(),
-      activeSection.value === DASHBOARD_SECTIONS.collections ? loadLibraryCollections() : Promise.resolve(),
+      activeSection.value === DASHBOARD_SECTIONS.collections
+        ? loadLibraryCollections()
+        : Promise.resolve(),
     ])
   } catch {
     // Keep the dialog open so the user can adjust and try again.
@@ -232,7 +236,10 @@ onBeforeUnmount(() => {
         <Message v-else-if="collections.error" severity="error" :closable="false">
           {{ collections.error }}
         </Message>
-        <div v-else-if="collections.dashboardCollections.length === 0" class="dashboard-view__empty">
+        <div
+          v-else-if="collections.dashboardCollections.length === 0"
+          class="dashboard-view__empty"
+        >
           <h2>No pinned collections yet.</h2>
           <p>Add collections to your dashboard from the Collections tab.</p>
         </div>

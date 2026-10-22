@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vite-plus/test'
 import {
   inferClozeFromText,
   listFromMultiline,
@@ -34,7 +34,7 @@ describe('sentence authoring', () => {
         multipleChoiceOptions: 'lerne\nreise',
         hint: ' verb ',
         notes: ' present tense ',
-      })
+      }),
     ).toEqual({
       text: 'Ich {{lerne}} heute.',
       translation: 'I learn today.',

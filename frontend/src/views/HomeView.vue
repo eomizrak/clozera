@@ -9,7 +9,9 @@ import { playTargetForUser } from '@/utils/account-routing'
 
 const account = useAccountStore()
 
-const startTarget = computed(() => (account.user ? playTargetForUser(account.user) : { name: 'sign-up' }))
+const startTarget = computed(() =>
+  account.user ? playTargetForUser(account.user) : { name: 'sign-up' },
+)
 const secondaryTarget = computed(() => (account.user ? { name: 'dashboard' } : { name: 'login' }))
 const secondaryLabel = computed(() => (account.user ? 'Open dashboard' : 'Log in'))
 </script>
@@ -29,7 +31,10 @@ const secondaryLabel = computed(() => (account.user ? 'Open dashboard' : 'Log in
               check yourself, and keep the full context in view.
             </p>
             <div class="home-view__actions">
-              <RouterLink class="ui-button ui-button--primary home-view__primary-action" :to="startTarget">
+              <RouterLink
+                class="ui-button ui-button--primary home-view__primary-action"
+                :to="startTarget"
+              >
                 <Play :size="18" fill="currentColor" aria-hidden="true" />
                 <span>Start practicing</span>
               </RouterLink>

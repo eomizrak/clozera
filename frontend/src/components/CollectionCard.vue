@@ -29,7 +29,9 @@ function pinLabel() {
 }
 
 function practiceLabel() {
-  return props.collection.sentenceCount > 0 ? `Practice ${props.collection.name}` : 'No sentences to practice'
+  return props.collection.sentenceCount > 0
+    ? `Practice ${props.collection.name}`
+    : 'No sentences to practice'
 }
 </script>
 
@@ -41,7 +43,10 @@ function practiceLabel() {
       :aria-label="`Open ${collection.name}`"
     >
       <p v-if="collectionMeta" class="collection-card__meta">{{ collectionMeta }}</p>
-      <p v-else-if="collection.relationship === 'community' && collection.creator" class="collection-card__meta">
+      <p
+        v-else-if="collection.relationship === 'community' && collection.creator"
+        class="collection-card__meta"
+      >
         by {{ collection.creator.displayName }}
       </p>
       <h3 class="collection-card__title">{{ collection.name }}</h3>

@@ -1,6 +1,8 @@
-# frontend
+# Clozera frontend
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 3 application using Vite+ 1.3.0 for development, production builds, Vitest,
+Oxlint and Oxfmt. Use Node.js 24.22.1 and npm. The project-local `vp` binary is
+installed by npm; no global Vite+ installation is required.
 
 ## Recommended IDE Setup
 
@@ -17,12 +19,15 @@ This template should help get you started developing with Vue 3 in Vite.
 
 ## Customize configuration
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+Vite, tests, lint and format settings live in `vite.config.js`.
+See the [Vite+ configuration reference](https://viteplus.dev/config/).
+ESLint is retained in `eslint.config.js` for Vue template checks that Oxlint does
+not yet support. `npm run check` runs both tools.
 
 ## Project Setup
 
 ```sh
-npm install
+npm ci
 ```
 
 ### Compile and Hot-Reload for Development
@@ -43,8 +48,31 @@ npm run build
 npm run test:unit
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+For a single test run:
+
+```sh
+npm run test:unit -- --run
+```
+
+Import test APIs from `vite-plus/test`. Vite and Vitest package overrides must stay
+aligned with the installed Vite+ toolchain; inspect it with `npm exec -- vp toolchain`.
+
+### Check formatting, lint and Vue templates
+
+```sh
+npm run check
+```
+
+### Lint with Oxlint and ESLint
 
 ```sh
 npm run lint
 ```
+
+### Format source files with Oxfmt
+
+```sh
+npm run format
+```
+
+`npm run format:check` checks formatting without changing files.

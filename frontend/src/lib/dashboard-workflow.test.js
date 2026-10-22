@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vite-plus/test'
 import {
   DASHBOARD_SCROLL_KEY,
   DASHBOARD_SECTION_KEY,
@@ -35,7 +35,10 @@ describe('dashboard workflow', () => {
       storage,
     })
 
-    expect(storage.setItem).toHaveBeenCalledWith(DASHBOARD_SECTION_KEY, DASHBOARD_SECTIONS.dashboard)
+    expect(storage.setItem).toHaveBeenCalledWith(
+      DASHBOARD_SECTION_KEY,
+      DASHBOARD_SECTIONS.dashboard,
+    )
     expect(storage.setItem).toHaveBeenCalledWith(DASHBOARD_SCROLL_KEY, '24')
   })
 

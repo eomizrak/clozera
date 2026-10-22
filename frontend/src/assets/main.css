@@ -5,8 +5,10 @@
 :root {
   --page-max-width: 1120px;
   --page-gutter: clamp(1rem, 4vw, 3rem);
-  --font-sans: "Source Sans 3", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Source Serif 4", Georgia, serif;
+  --font-sans:
+    'Source Sans 3', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    sans-serif;
+  --font-display: 'Source Serif 4', Georgia, serif;
   --text-2xs: 0.68rem;
   --text-xs: 0.78rem;
   --text-sm: 0.86rem;
@@ -49,7 +51,12 @@
   --public-cream: #fff7ed;
   --public-warm: #fffaf3;
   --public-white: #ffffff;
-  --public-page-bg: linear-gradient(145deg, var(--public-warm) 0%, var(--public-cream) 46%, var(--public-white) 100%);
+  --public-page-bg: linear-gradient(
+    145deg,
+    var(--public-warm) 0%,
+    var(--public-cream) 46%,
+    var(--public-white) 100%
+  );
   --public-glow: rgba(249, 115, 22, 0.16);
   --public-glow-strong: rgba(249, 115, 22, 0.2);
   --public-grid-line: rgba(194, 65, 12, 0.16);
@@ -98,8 +105,7 @@ body {
   min-height: 100vh;
   font-family: var(--font-sans);
   background:
-    radial-gradient(circle at 82% 12%, var(--public-glow), transparent 24rem),
-    var(--public-page-bg);
+    radial-gradient(circle at 82% 12%, var(--public-glow), transparent 24rem), var(--public-page-bg);
 }
 
 .auth-view__main {
@@ -200,8 +206,7 @@ body {
   min-height: 100vh;
   font-family: var(--font-sans);
   background:
-    radial-gradient(circle at 82% 12%, var(--public-glow), transparent 24rem),
-    var(--public-page-bg);
+    radial-gradient(circle at 82% 12%, var(--public-glow), transparent 24rem), var(--public-page-bg);
 }
 
 .language-view__main {
@@ -287,8 +292,7 @@ body {
   background:
     radial-gradient(circle at 82% 12%, var(--public-glow), transparent 24rem),
     linear-gradient(var(--public-grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--public-grid-line) 1px, transparent 1px),
-    var(--public-page-bg);
+    linear-gradient(90deg, var(--public-grid-line) 1px, transparent 1px), var(--public-page-bg);
   background-size:
     auto,
     2rem 2rem,
@@ -904,7 +908,7 @@ body {
 .collection-detail-view__field-help code {
   padding: 0.08rem 0.25rem;
   color: var(--ui-code-color);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
   font-size: var(--text-code);
   background: var(--ui-code-bg);
   border-radius: var(--ui-radius-chip);
@@ -1334,7 +1338,6 @@ body {
   .language-view__section {
     width: min(100%, 30rem);
   }
-
 }
 
 @media (max-width: 560px) {
@@ -1409,5 +1412,4 @@ body {
   .practice-session__topbar {
     align-items: flex-start;
   }
-
 }

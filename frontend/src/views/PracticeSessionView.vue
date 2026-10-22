@@ -40,7 +40,10 @@ const totalQuestions = computed(() => sessionSentences.value.length)
 const attemptedCount = computed(() => {
   if (!totalQuestions.value) return 0
 
-  return Math.min(totalQuestions.value, currentIndex.value + (checked.value || isComplete.value ? 1 : 0))
+  return Math.min(
+    totalQuestions.value,
+    currentIndex.value + (checked.value || isComplete.value ? 1 : 0),
+  )
 })
 const progressPercent = computed(() => {
   if (!totalQuestions.value) return 0
@@ -132,7 +135,10 @@ onMounted(async () => {
         <span>Back to collection</span>
       </button>
 
-      <ProgressSpinner v-if="collections.isLoadingCollection && !hasStarted" class="dashboard-view__loading" />
+      <ProgressSpinner
+        v-if="collections.isLoadingCollection && !hasStarted"
+        class="dashboard-view__loading"
+      />
       <Message v-else-if="collections.error" severity="error" :closable="false">
         {{ collections.error }}
       </Message>
@@ -158,7 +164,13 @@ onMounted(async () => {
         <section v-if="isComplete" class="practice-session__result" aria-label="Practice result">
           <p class="practice-session__eyebrow">Session complete</p>
           <h1>{{ correctCount }} / {{ totalQuestions }} correct</h1>
-          <p>{{ totalQuestions ? 'Run it again for a fresh random set.' : 'This collection has no sentences yet.' }}</p>
+          <p>
+            {{
+              totalQuestions
+                ? 'Run it again for a fresh random set.'
+                : 'This collection has no sentences yet.'
+            }}
+          </p>
           <div class="practice-session__result-actions">
             <Button
               class="ui-button ui-button--primary"
@@ -171,7 +183,12 @@ onMounted(async () => {
                 <RotateCcw :size="18" aria-hidden="true" />
               </template>
             </Button>
-            <Button class="ui-button" type="button" label="Back to collection" @click="goBackToCollection">
+            <Button
+              class="ui-button"
+              type="button"
+              label="Back to collection"
+              @click="goBackToCollection"
+            >
               <template #icon>
                 <ArrowLeft :size="18" aria-hidden="true" />
               </template>
@@ -179,12 +196,21 @@ onMounted(async () => {
           </div>
         </section>
 
-        <section v-else-if="currentSentence" class="practice-session__question" aria-label="Practice question">
-          <p class="practice-session__counter">Sentence {{ currentIndex + 1 }} / {{ totalQuestions }}</p>
+        <section
+          v-else-if="currentSentence"
+          class="practice-session__question"
+          aria-label="Practice question"
+        >
+          <p class="practice-session__counter">
+            Sentence {{ currentIndex + 1 }} / {{ totalQuestions }}
+          </p>
 
           <div class="practice-session__sentence">
             <p>
-              <template v-for="(part, partIndex) in sentenceParts(currentSentence)" :key="partIndex">
+              <template
+                v-for="(part, partIndex) in sentenceParts(currentSentence)"
+                :key="partIndex"
+              >
                 <span v-if="part.isCloze" class="practice-session__blank">____</span>
                 <span v-else>{{ part.text }}</span>
               </template>
@@ -192,7 +218,11 @@ onMounted(async () => {
             <span>{{ currentSentence.translation }}</span>
           </div>
 
-          <form v-if="!isChoiceMode" class="practice-session__typed" @submit.prevent="checkAnswer()">
+          <form
+            v-if="!isChoiceMode"
+            class="practice-session__typed"
+            @submit.prevent="checkAnswer()"
+          >
             <InputText
               v-model="typedAnswer"
               class="practice-session__input"
