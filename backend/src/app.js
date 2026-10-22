@@ -9,7 +9,7 @@ import session from 'express-session'
 import MongoStore from 'connect-mongo'
 import mongoose from 'mongoose'
 import passport from 'passport'
-import './database-connection.js'
+import { isDatabaseReady } from './database-connection.js'
 import accountsRouter from './routes/accounts.js'
 import adminRouter from './routes/admin.js'
 import collectionsRouter from './routes/collections.js'
@@ -22,6 +22,7 @@ passport.serializeUser(User.serializeUser())
 passport.deserializeUser(User.deserializeUser())
 
 const app = express()
+app.locals.shuttingDown = false
 const isProduction = process.env.NODE_ENV === 'production'
 const isTest = process.env.NODE_ENV === 'test'
 const frontendUrl = process.env.FRONTEND_URL
@@ -38,6 +39,13 @@ if (isProduction && !frontendUrl) {
 if (isProduction) {
   app.set('trust proxy', 1)
 }
+
+// Probes do not need authentication, sessions or a database query.
+app.get('/health/ready', (req, res) => {
+  const ready = !app.locals.shuttingDown && isDatabaseReady()
+  res.set('Cache-Control', 'no-store')
+  res.status(ready ? 200 : 503).json({ status: ready ? 'ready' : 'not_ready' })
+})
 
 app.use(
   cors({

@@ -1,16 +1,43 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import request from 'supertest'
 import * as languagesService from '../services/languages-service.js'
+import * as database from '../database-connection.js'
 import app from '../app.js'
 
 vi.spyOn(languagesService, 'listLanguages').mockImplementation(() => undefined)
 vi.spyOn(languagesService, 'listLanguagePairs').mockImplementation(() => undefined)
+vi.spyOn(database, 'isDatabaseReady').mockReturnValue(false)
 
 afterAll(() => vi.restoreAllMocks())
 
 describe('app routes', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    database.isDatabaseReady.mockReturnValue(false)
+    app.locals.shuttingDown = false
+  })
+
+  it('returns 503 when MongoDB is disconnected', async () => {
+    const response = await request(app).get('/health/ready')
+    expect(response.status).toBe(503)
+    expect(response.body).toEqual({ status: 'not_ready' })
+  })
+
+  it('reports readiness without creating a session when MongoDB is connected', async () => {
+    database.isDatabaseReady.mockReturnValue(true)
+    const response = await request(app).get('/health/ready')
+    expect(response.status).toBe(200)
+    expect(response.body).toEqual({ status: 'ready' })
+    expect(response.headers['cache-control']).toBe('no-store')
+    expect(response.headers['set-cookie']).toBeUndefined()
+  })
+
+  it('reports not ready while shutting down even if MongoDB is connected', async () => {
+    database.isDatabaseReady.mockReturnValue(true)
+    app.locals.shuttingDown = true
+    const response = await request(app).get('/health/ready')
+    expect(response.status).toBe(503)
+    expect(response.body).toEqual({ status: 'not_ready' })
   })
 
   it('returns the current anonymous session', async () => {

@@ -54,7 +54,7 @@ services:
           'CMD',
           'node',
           '-e',
-          "require('net').connect(3000, '127.0.0.1').on('connect', function () { this.end(); process.exit(0) }).on('error', function () { process.exit(1) })",
+          "fetch('http://127.0.0.1:3000/health/ready', { signal: AbortSignal.timeout(3000) }).then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))",
         ]
       interval: 10s
       timeout: 5s

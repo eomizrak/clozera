@@ -13,9 +13,9 @@ Oxlint, Oxfmt, Vitest and task orchestration. Install dependencies with `npm ci`
 | `npm run check`                                 | Check formatting, lint and inferred types with Vite+           |
 | `npm run lint` / `npm run lint:fix`             | Run Oxlint / apply its fixes                                   |
 | `npm run format:check` / `npm run format:write` | Check / apply Oxfmt formatting                                 |
-| `npm test`                                      | Run the 56 unit tests with Vite+ Vitest                        |
+| `npm test`                                      | Run the 59 unit tests with Vite+ Vitest                        |
 | `npm run test:integration`                      | Run the 35 integration tests                                   |
-| `npm run test:all`                              | Run all 91 tests sequentially                                  |
+| `npm run test:all`                              | Run all 94 tests sequentially                                  |
 | `npm run test:watch`                            | Watch unit tests                                               |
 | `npm run test:coverage`                         | Collect unit-test coverage                                     |
 | `npm run test:debug`                            | Run verbose unit tests with hanging-process diagnostics        |
@@ -70,4 +70,23 @@ without a Vite+ runtime dependency or bundling step.
 
 Development uses `Dockerfile`, which installs development tools and the Vite+
 configuration; Docker Compose mounts `src/` for automatic restarts. Production
-uses `Dockerfile.production` and `npm ci --omit=dev`, then starts Node directly.
+uses `Dockerfile.production` and `npm ci --omit=dev`, then starts Node directly as PID 1 so container shutdown signals reach the server.
+
+## Server lifecycle and readiness
+
+`npm start` and `npm run dev` connect to MongoDB before constructing the session
+store and opening the HTTP port. Missing configuration or an initial connection
+failure exits with a nonzero status; server selection is bounded to five seconds.
+Importing `app.js` alone does not initiate a database connection.
+
+`GET /health/ready` returns `200 { "status": "ready" }` when Mongoose reports an
+established connection, and `503 { "status": "not_ready" }` after disconnection
+or when shutdown starts. This probe reports connection state without executing a
+query, does not create a session, and disables response caching. Compose uses it
+for the API healthcheck instead of only checking that the TCP port is open.
+
+On `SIGTERM` or `SIGINT`, the server marks itself not ready, stops accepting new
+connections, waits for active HTTP requests to finish, then disconnects MongoDB.
+Shutdown is idempotent and bounded to eight seconds. If requests or database
+cleanup exceed that deadline, remaining HTTP connections are closed and the
+process exits with status 1. Normal shutdown exits with status 0.

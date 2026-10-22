@@ -1,8 +1,21 @@
 import mongoose from 'mongoose'
 
-if (process.env.NODE_ENV !== 'test') {
-  mongoose
-    .connect(process.env.MONGODB_CONNECTION_STRING)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.log('Could not connect to MongoDB', err))
+async function connectDatabase() {
+  if (!process.env.MONGODB_CONNECTION_STRING) {
+    throw new Error('MONGODB_CONNECTION_STRING must be defined.')
+  }
+
+  await mongoose.connect(process.env.MONGODB_CONNECTION_STRING, {
+    serverSelectionTimeoutMS: 5000,
+  })
 }
+
+function isDatabaseReady() {
+  return mongoose.connection.readyState === 1
+}
+
+async function disconnectDatabase() {
+  await mongoose.disconnect()
+}
+
+export { connectDatabase, disconnectDatabase, isDatabaseReady }
