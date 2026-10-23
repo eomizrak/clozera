@@ -92,3 +92,19 @@ cevabı kısa bir satırda korunur. Ayrı bir sonuç kartı oluşturulmaz.
 Aynı buton önce `Check answer`, sonra `Next sentence` veya `Finish session`
 olur. Enter bu iki adımı da çalıştırır; IME kompozisyonu sırasında Enter cevabı
 göndermez. Yeni soruda odak yeniden cümledeki cevap alanına geçer.
+
+
+## Marka görselleri
+
+Navbar'da `public/brand/clozera-wordmark.png` kullanılır. Bu dosya, seçilmiş açık
+zemin logosunun optimize edilmiş şeffaf PNG kopyasıdır; mevcut açık arayüz teması
+ile kullanılır. Link erişilebilir bir ad taşır ve görüntü için boyutlar tanımlıdır.
+
+`index.html`, açık ve koyu tarayıcı temaları için ayrı favicon PNG dosyalarını
+`prefers-color-scheme` media sorgusuyla seçer. ICO varsayılan sürümü ve kökteki
+`favicon.ico`/`favicon.png` dosyaları eski istemciler için korunur. Tarayıcı
+sekmesinin teması, uygulamanın arayüz temasından bağımsızdır; sistem koyu modda
+olsa da mevcut açık navbar'a beyaz wordmark yüklenmez.
+
+Seçilen tasarım dosyaları ve koyu wordmark'ın mevcut sınırı için
+`design/brand/wordmark-v1/README.md` dosyasına bak.

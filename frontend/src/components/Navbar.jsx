@@ -49,9 +49,13 @@ export default function Navbar({ dashboard = false }) {
           aria-label={dashboard ? 'Clozera dashboard' : 'Clozera home'}
           className="shrink-0 rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-4"
         >
-          <span className="text-3xl font-black tracking-tight">
-            clozera<span className="text-primary">.</span>
-          </span>
+          <img
+            src={`${import.meta.env.BASE_URL}brand/clozera-wordmark.png`}
+            alt="Clozera"
+            width="480"
+            height="160"
+            className="block h-10 w-30 object-contain"
+          />
         </Link>
         <div className="flex items-center gap-2">
           {dashboard && account.user ? (
