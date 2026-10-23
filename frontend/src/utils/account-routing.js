@@ -3,17 +3,18 @@ export function selectedLanguagePairSlugFromUser(user) {
 }
 
 export function authenticatedHomeTarget(user) {
-  if (!selectedLanguagePairSlugFromUser(user)) {
-    return { name: 'languages' }
-  }
-
-  return { name: 'dashboard' }
+  return selectedLanguagePairSlugFromUser(user) ? '/dashboard' : '/languages'
 }
 
 export function playTargetForUser(user) {
-  if (!user) {
-    return { name: 'login', query: { redirect: '/dashboard' } }
-  }
+  return user ? authenticatedHomeTarget(user) : '/login?redirect=%2Fdashboard'
+}
 
-  return authenticatedHomeTarget(user)
+export function safeRedirect(value) {
+  return typeof value === 'string' &&
+    value.startsWith('/') &&
+    !value.startsWith('//') &&
+    !/[\\\s]/.test(value)
+    ? value
+    : ''
 }

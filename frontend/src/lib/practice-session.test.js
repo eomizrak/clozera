@@ -3,12 +3,14 @@ import {
   answerMatchesSentence,
   choiceSlotsForSentence,
   practiceModeFromValue,
+  sessionLimitFromValue,
   sessionSentencesFromCollection,
 } from '@/lib/practice-session'
 
 describe('practice session', () => {
   it('normalizes mode values', () => {
     expect(practiceModeFromValue('choice')).toBe('choice')
+    expect(practiceModeFromValue('flashcard')).toBe('flashcard')
     expect(practiceModeFromValue('anything-else')).toBe('typed')
   })
 
@@ -51,5 +53,11 @@ describe('practice session', () => {
     expect(slots.filter((slot) => !slot.disabled)).toEqual([
       expect.objectContaining({ label: 'bald', isCorrect: true }),
     ])
+  })
+  it('accepts supported round sizes and falls back for invalid URL values', () => {
+    expect(sessionLimitFromValue('5')).toBe(5)
+    expect(sessionLimitFromValue('20')).toBe(20)
+    for (const value of [null, '', 'NaN', '-1', '999', 'Infinity'])
+      expect(sessionLimitFromValue(value)).toBe(10)
   })
 })

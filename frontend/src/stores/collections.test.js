@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { createPinia, setActivePinia } from 'pinia'
 import { useCollectionsStore } from '@/stores/collections'
 
 const api = vi.hoisted(() => ({
@@ -15,7 +14,7 @@ vi.mock('@/lib/api', () => ({
 
 describe('collections store', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
+    useCollectionsStore.setState(useCollectionsStore.getInitialState(), true)
     vi.clearAllMocks()
   })
 
@@ -53,8 +52,7 @@ describe('collections store', () => {
       },
     })
 
-    const collections = useCollectionsStore()
-    await collections.loadCollections({ languagePair: 'deu-eng', perPage: 100 })
+    await useCollectionsStore.getState().loadCollections({ languagePair: 'deu-eng', perPage: 100 })
 
     expect(api.get).toHaveBeenCalledWith('/collections', {
       params: {
@@ -64,19 +62,21 @@ describe('collections store', () => {
         perPage: 100,
       },
     })
-    expect(collections.collectionShelves.map((shelf) => shelf.name)).toEqual([
+    expect(useCollectionsStore.getState().collectionShelves.map((shelf) => shelf.name)).toEqual([
       'Official',
       'My Collections',
       'Community',
     ])
-    expect(collections.collectionShelves[0].groups.map((group) => group.name)).toEqual([
-      'Fast Track',
-      'Topics',
-    ])
-    expect(collections.collectionShelves[1].groups[0].collections[0].name).toBe('Food')
-    expect(collections.collectionShelves[2].groups[0].collections[0].creator.displayName).toBe(
-      'Grace Hopper',
+    expect(
+      useCollectionsStore.getState().collectionShelves[0].groups.map((group) => group.name),
+    ).toEqual(['Fast Track', 'Topics'])
+    expect(useCollectionsStore.getState().collectionShelves[1].groups[0].collections[0].name).toBe(
+      'Food',
     )
+    expect(
+      useCollectionsStore.getState().collectionShelves[2].groups[0].collections[0].creator
+        .displayName,
+    ).toBe('Grace Hopper')
   })
 
   it('creates a collection', async () => {
@@ -89,8 +89,7 @@ describe('collections store', () => {
       },
     })
 
-    const collections = useCollectionsStore()
-    const createdCollection = await collections.createCollection({
+    const createdCollection = await useCollectionsStore.getState().createCollection({
       name: 'Travel',
       type: 'topic',
       languagePairSlug: 'deu-eng',
@@ -124,10 +123,9 @@ describe('collections store', () => {
       },
     })
 
-    const collections = useCollectionsStore()
-    await collections.loadDashboardCollections({ languagePair: 'deu-eng' })
-    const pinned = await collections.pinCollection('collection-2')
-    await collections.unpinCollection('collection-1')
+    await useCollectionsStore.getState().loadDashboardCollections({ languagePair: 'deu-eng' })
+    const pinned = await useCollectionsStore.getState().pinCollection('collection-2')
+    await useCollectionsStore.getState().unpinCollection('collection-1')
 
     expect(api.get).toHaveBeenCalledWith('/dashboard/collections', {
       params: {
@@ -138,7 +136,7 @@ describe('collections store', () => {
       collectionId: 'collection-2',
     })
     expect(api.delete).toHaveBeenCalledWith('/dashboard/collections/collection-1')
-    expect(collections.dashboardCollections).toEqual([
+    expect(useCollectionsStore.getState().dashboardCollections).toEqual([
       { id: 'collection-2', name: 'Travel', isPinned: true },
     ])
     expect(pinned.isPinned).toBe(true)
@@ -157,20 +155,17 @@ describe('collections store', () => {
     })
     api.delete.mockResolvedValueOnce({})
 
-    const collections = useCollectionsStore()
-    collections.collections = [
-      { id: 'collection-1', name: 'Draft Practice', visibility: 'private' },
-    ]
-    collections.dashboardCollections = [
-      { id: 'collection-1', name: 'Draft Practice', visibility: 'private' },
-    ]
+    useCollectionsStore.setState({
+      collections: [{ id: 'collection-1', name: 'Draft Practice', visibility: 'private' }],
+      dashboardCollections: [{ id: 'collection-1', name: 'Draft Practice', visibility: 'private' }],
+    })
 
-    const updated = await collections.updateCollection('collection-1', {
+    const updated = await useCollectionsStore.getState().updateCollection('collection-1', {
       name: 'Travel Practice',
       description: 'Ready to share',
       visibility: 'public',
     })
-    await collections.deleteCollection('collection-1')
+    await useCollectionsStore.getState().deleteCollection('collection-1')
 
     expect(api.patch).toHaveBeenCalledWith('/collections/collection-1', {
       name: 'Travel Practice',
@@ -179,8 +174,8 @@ describe('collections store', () => {
     })
     expect(api.delete).toHaveBeenCalledWith('/collections/collection-1')
     expect(updated.name).toBe('Travel Practice')
-    expect(collections.collections).toEqual([])
-    expect(collections.dashboardCollections).toEqual([])
+    expect(useCollectionsStore.getState().collections).toEqual([])
+    expect(useCollectionsStore.getState().dashboardCollections).toEqual([])
   })
 
   it('updates a sentence', async () => {
@@ -195,11 +190,12 @@ describe('collections store', () => {
       },
     })
 
-    const collections = useCollectionsStore()
-    const updatedSentence = await collections.updateSentence('collection-1', 'sentence-1', {
-      text: 'Ich {{lerne}}.',
-      translation: 'I learn.',
-    })
+    const updatedSentence = await useCollectionsStore
+      .getState()
+      .updateSentence('collection-1', 'sentence-1', {
+        text: 'Ich {{lerne}}.',
+        translation: 'I learn.',
+      })
 
     expect(api.patch).toHaveBeenCalledWith('/collections/collection-1/sentences/sentence-1', {
       text: 'Ich {{lerne}}.',

@@ -2,7 +2,9 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "jsx": "react-jsx",
+    "checkJs": false
   },
   "exclude": ["node_modules", "dist"]
 }

@@ -1,322 +1,141 @@
-import { computed, ref } from 'vue'
-import { defineStore } from 'pinia'
+import { create } from 'zustand'
 import api from '@/lib/api'
+import { apiErrorMessage } from '@/lib/api-error'
 import { buildCollectionShelves } from '@/lib/collection-shelves'
 
-function apiErrorMessage(error) {
-  return error?.response?.data?.error?.message || error?.message || 'Unable to load collections.'
-}
-
-export const useCollectionsStore = defineStore('collections', () => {
-  const collections = ref([])
-  const dashboardCollections = ref([])
-  const activeCollection = ref(null)
-  const activeCollectionSentences = ref([])
-  const meta = ref({
-    total: 0,
-    page: 1,
-    perPage: 20,
-  })
-  const sentencesMeta = ref({
-    total: 0,
-    page: 1,
-    perPage: 20,
-  })
-  const isLoading = ref(false)
-  const isLoadingDashboard = ref(false)
-  const isLoadingCollection = ref(false)
-  const isCreating = ref(false)
-  const isPinning = ref(false)
-  const isCreatingSentence = ref(false)
-  const isUpdatingSentence = ref(false)
-  const hasLoaded = ref(false)
-  const error = ref('')
-  const expandedGroupIds = ref(new Set())
-
-  const collectionShelves = computed(() => buildCollectionShelves(collections.value))
-
-  const groupedCollections = computed(() =>
-    collectionShelves.value.flatMap((shelf) => shelf.groups),
-  )
-
-  async function loadCollections({ languagePair, owner, page = 1, perPage = 100 } = {}) {
-    isLoading.value = true
-    error.value = ''
-
+export const useCollectionsStore = create((set, get) => {
+  async function request(flag, action) {
+    set({ error: '', ...(flag ? { [flag]: true } : {}) })
     try {
-      const response = await api.get('/collections', {
-        params: {
-          languagePair,
-          owner,
-          page,
-          perPage,
-        },
-      })
-      collections.value = response.data.data.collections
-      meta.value = response.data.meta
-      hasLoaded.value = true
-    } catch (loadError) {
-      collections.value = []
-      error.value = apiErrorMessage(loadError)
-      throw loadError
+      return await action()
+    } catch (error) {
+      set({ error: apiErrorMessage(error, 'Unable to load collections.') })
+      throw error
     } finally {
-      isLoading.value = false
+      if (flag) set({ [flag]: false })
     }
   }
-
-  async function loadDashboardCollections({ languagePair } = {}) {
-    isLoadingDashboard.value = true
-    error.value = ''
-
-    try {
-      const response = await api.get('/dashboard/collections', {
-        params: {
-          languagePair,
-        },
-      })
-      dashboardCollections.value = response.data.data.collections
-      return dashboardCollections.value
-    } catch (loadError) {
-      dashboardCollections.value = []
-      error.value = apiErrorMessage(loadError)
-      throw loadError
-    } finally {
-      isLoadingDashboard.value = false
+  function library(collections) {
+    const collectionShelves = buildCollectionShelves(collections)
+    return {
+      collections,
+      collectionShelves,
+      groupedCollections: collectionShelves.flatMap((shelf) => shelf.groups),
     }
   }
-
-  async function loadCollection(collectionId) {
-    isLoadingCollection.value = true
-    error.value = ''
-
-    try {
-      const response = await api.get(`/collections/${collectionId}`)
-      activeCollection.value = response.data.data
-      return activeCollection.value
-    } catch (loadError) {
-      activeCollection.value = null
-      error.value = apiErrorMessage(loadError)
-      throw loadError
-    } finally {
-      isLoadingCollection.value = false
-    }
+  function replace(next) {
+    set((state) => ({
+      ...library(state.collections.map((item) => (item.id === next.id ? next : item))),
+      dashboardCollections: state.dashboardCollections.map((item) =>
+        item.id === next.id ? next : item,
+      ),
+      activeCollection: state.activeCollection?.id === next.id ? next : state.activeCollection,
+    }))
   }
-
-  async function loadCollectionSentences({ collectionId, page = 1, perPage = 100 } = {}) {
-    isLoadingCollection.value = true
-    error.value = ''
-
-    try {
-      const response = await api.get(`/collections/${collectionId}/sentences`, {
-        params: {
-          page,
-          perPage,
-        },
-      })
-      activeCollectionSentences.value = response.data.data.sentences
-      sentencesMeta.value = response.data.meta
-    } catch (loadError) {
-      activeCollectionSentences.value = []
-      error.value = apiErrorMessage(loadError)
-      throw loadError
-    } finally {
-      isLoadingCollection.value = false
-    }
-  }
-
-  async function createCollection(payload) {
-    isCreating.value = true
-    error.value = ''
-
-    try {
-      const response = await api.post('/collections', payload)
-      collections.value = collections.value.concat(response.data.data)
-      return response.data.data
-    } catch (createError) {
-      error.value = apiErrorMessage(createError)
-      throw createError
-    } finally {
-      isCreating.value = false
-    }
-  }
-
-  function replaceCollection(nextCollection) {
-    collections.value = collections.value.map((collection) =>
-      collection.id === nextCollection.id ? nextCollection : collection,
-    )
-    dashboardCollections.value = dashboardCollections.value.map((collection) =>
-      collection.id === nextCollection.id ? nextCollection : collection,
-    )
-    if (activeCollection.value?.id === nextCollection.id) {
-      activeCollection.value = nextCollection
-    }
-  }
-
-  function upsertDashboardCollection(nextCollection) {
-    const exists = dashboardCollections.value.some(
-      (collection) => collection.id === nextCollection.id,
-    )
-    dashboardCollections.value = exists
-      ? dashboardCollections.value.map((collection) =>
-          collection.id === nextCollection.id ? nextCollection : collection,
-        )
-      : dashboardCollections.value.concat(nextCollection)
-  }
-
-  async function updateCollection(collectionId, payload) {
-    error.value = ''
-
-    try {
-      const response = await api.patch(`/collections/${collectionId}`, payload)
-      replaceCollection(response.data.data)
-      return response.data.data
-    } catch (updateError) {
-      error.value = apiErrorMessage(updateError)
-      throw updateError
-    }
-  }
-
-  async function deleteCollection(collectionId) {
-    error.value = ''
-
-    try {
-      await api.delete(`/collections/${collectionId}`)
-      collections.value = collections.value.filter((collection) => collection.id !== collectionId)
-      dashboardCollections.value = dashboardCollections.value.filter(
-        (collection) => collection.id !== collectionId,
-      )
-      if (activeCollection.value?.id === collectionId) {
-        activeCollection.value = null
-      }
-    } catch (deleteError) {
-      error.value = apiErrorMessage(deleteError)
-      throw deleteError
-    }
-  }
-
-  async function pinCollection(collectionId) {
-    isPinning.value = true
-    error.value = ''
-
-    try {
-      const response = await api.post('/dashboard/collections', { collectionId })
-      replaceCollection(response.data.data)
-      upsertDashboardCollection(response.data.data)
-      return response.data.data
-    } catch (pinError) {
-      error.value = apiErrorMessage(pinError)
-      throw pinError
-    } finally {
-      isPinning.value = false
-    }
-  }
-
-  async function unpinCollection(collectionId) {
-    isPinning.value = true
-    error.value = ''
-
-    try {
-      const response = await api.delete(`/dashboard/collections/${collectionId}`)
-      const unpinnedCollection = response.data?.data || null
-
-      if (unpinnedCollection) {
-        replaceCollection(unpinnedCollection)
-      }
-
-      dashboardCollections.value = dashboardCollections.value.filter(
-        (collection) => collection.id !== collectionId,
-      )
-      if (activeCollection.value?.id === collectionId) {
-        activeCollection.value = unpinnedCollection || activeCollection.value
-      }
-    } catch (unpinError) {
-      error.value = apiErrorMessage(unpinError)
-      throw unpinError
-    } finally {
-      isPinning.value = false
-    }
-  }
-
-  async function createSentence(collectionId, payload) {
-    isCreatingSentence.value = true
-    error.value = ''
-
-    try {
-      const response = await api.post(`/collections/${collectionId}/sentences`, payload)
-      return response.data.data
-    } catch (createError) {
-      error.value = apiErrorMessage(createError)
-      throw createError
-    } finally {
-      isCreatingSentence.value = false
-    }
-  }
-
-  async function updateSentence(collectionId, sentenceId, payload) {
-    isUpdatingSentence.value = true
-    error.value = ''
-
-    try {
-      const response = await api.patch(
-        `/collections/${collectionId}/sentences/${sentenceId}`,
-        payload,
-      )
-      return response.data.data
-    } catch (updateError) {
-      error.value = apiErrorMessage(updateError)
-      throw updateError
-    } finally {
-      isUpdatingSentence.value = false
-    }
-  }
-
-  function isGroupExpanded(group) {
-    return expandedGroupIds.value.has(group.id)
-  }
-
-  function toggleGroup(group) {
-    const nextExpanded = new Set(expandedGroupIds.value)
-
-    if (nextExpanded.has(group.id)) {
-      nextExpanded.delete(group.id)
-    } else {
-      nextExpanded.add(group.id)
-    }
-
-    expandedGroupIds.value = nextExpanded
-  }
-
   return {
-    collections,
-    collectionShelves,
-    dashboardCollections,
-    activeCollection,
-    activeCollectionSentences,
-    createCollection,
-    createSentence,
-    deleteCollection,
-    error,
-    expandedGroupIds,
-    groupedCollections,
-    hasLoaded,
-    isCreating,
-    isCreatingSentence,
-    isLoadingDashboard,
-    isPinning,
-    isUpdatingSentence,
-    isGroupExpanded,
-    isLoading,
-    isLoadingCollection,
-    loadCollection,
-    loadCollections,
-    loadDashboardCollections,
-    loadCollectionSentences,
-    meta,
-    sentencesMeta,
-    toggleGroup,
-    pinCollection,
-    unpinCollection,
-    updateCollection,
-    updateSentence,
+    ...library([]),
+    dashboardCollections: [],
+    activeCollection: null,
+    activeCollectionSentences: [],
+    meta: { total: 0, page: 1, perPage: 20 },
+    sentencesMeta: { total: 0, page: 1, perPage: 20 },
+    isLoading: false,
+    isLoadingDashboard: false,
+    isLoadingCollection: false,
+    isCreating: false,
+    isPinning: false,
+    isCreatingSentence: false,
+    isUpdatingSentence: false,
+    hasLoaded: false,
+    error: '',
+    expandedGroupIds: new Set(),
+    loadCollections: ({ languagePair, owner, page = 1, perPage = 100 } = {}) =>
+      request('isLoading', async () => {
+        set(library([]))
+        const { data } = await api.get('/collections', {
+          params: { languagePair, owner, page, perPage },
+        })
+        set({ ...library(data.data.collections), meta: data.meta, hasLoaded: true })
+      }),
+    loadDashboardCollections: ({ languagePair } = {}) =>
+      request('isLoadingDashboard', async () => {
+        set({ dashboardCollections: [] })
+        const { data } = await api.get('/dashboard/collections', { params: { languagePair } })
+        set({ dashboardCollections: data.data.collections })
+        return data.data.collections
+      }),
+    loadCollection: (id) =>
+      request('isLoadingCollection', async () => {
+        set({ activeCollection: null })
+        const { data } = await api.get(`/collections/${id}`)
+        set({ activeCollection: data.data })
+        return data.data
+      }),
+    loadCollectionSentences: ({ collectionId, page = 1, perPage = 100 } = {}) =>
+      request('isLoadingCollection', async () => {
+        set({ activeCollectionSentences: [] })
+        const { data } = await api.get(`/collections/${collectionId}/sentences`, {
+          params: { page, perPage },
+        })
+        set({ activeCollectionSentences: data.data.sentences, sentencesMeta: data.meta })
+      }),
+    createCollection: (payload) =>
+      request('isCreating', async () => {
+        const { data } = await api.post('/collections', payload)
+        set(library([...get().collections, data.data]))
+        return data.data
+      }),
+    updateCollection: (id, payload) =>
+      request(null, async () => {
+        const { data } = await api.patch(`/collections/${id}`, payload)
+        replace(data.data)
+        return data.data
+      }),
+    deleteCollection: (id) =>
+      request(null, async () => {
+        await api.delete(`/collections/${id}`)
+        set((state) => ({
+          ...library(state.collections.filter((item) => item.id !== id)),
+          dashboardCollections: state.dashboardCollections.filter((item) => item.id !== id),
+          activeCollection: state.activeCollection?.id === id ? null : state.activeCollection,
+        }))
+      }),
+    pinCollection: (id) =>
+      request('isPinning', async () => {
+        const { data } = await api.post('/dashboard/collections', { collectionId: id })
+        replace(data.data)
+        set((state) => ({
+          dashboardCollections: [
+            ...state.dashboardCollections.filter((item) => item.id !== id),
+            data.data,
+          ],
+        }))
+        return data.data
+      }),
+    unpinCollection: (id) =>
+      request('isPinning', async () => {
+        const { data } = await api.delete(`/dashboard/collections/${id}`)
+        if (data?.data) replace(data.data)
+        set((state) => ({
+          dashboardCollections: state.dashboardCollections.filter((item) => item.id !== id),
+        }))
+      }),
+    createSentence: (id, payload) =>
+      request('isCreatingSentence', async () => {
+        const { data } = await api.post(`/collections/${id}/sentences`, payload)
+        return data.data
+      }),
+    updateSentence: (id, sentenceId, payload) =>
+      request('isUpdatingSentence', async () => {
+        const { data } = await api.patch(`/collections/${id}/sentences/${sentenceId}`, payload)
+        return data.data
+      }),
+    isGroupExpanded: (group) => get().expandedGroupIds.has(group.id),
+    toggleGroup(group) {
+      const ids = new Set(get().expandedGroupIds)
+      if (ids.has(group.id)) ids.delete(group.id)
+      else ids.add(group.id)
+      set({ expandedGroupIds: ids })
+    },
   }
 })

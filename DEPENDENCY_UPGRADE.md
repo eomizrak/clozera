@@ -1,3 +1,7 @@
+> Historical upgrade notes: the frontend has since migrated to React, React Router,
+> Zustand and shadcn/ui. The Vue/Pinia/PrimeVue details below describe the previous
+> stack. See [frontend/README.md](frontend/README.md) for the current setup.
+
 # Dependency upgrade and Vite+ migration
 
 ## Scope and decisions

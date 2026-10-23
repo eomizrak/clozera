@@ -1,13 +1,21 @@
 const DEFAULT_SESSION_LIMIT = 10
 const DEFAULT_CHOICE_COUNT = 4
 
+export const SESSION_LIMIT_OPTIONS = [5, 10, 20]
+
 export const PRACTICE_MODES = {
   typed: 'typed',
   choice: 'choice',
+  flashcard: 'flashcard',
 }
 
 export function practiceModeFromValue(value) {
-  return value === PRACTICE_MODES.choice ? PRACTICE_MODES.choice : PRACTICE_MODES.typed
+  return Object.values(PRACTICE_MODES).includes(value) ? value : PRACTICE_MODES.typed
+}
+
+export function sessionLimitFromValue(value) {
+  const limit = Number(value)
+  return SESSION_LIMIT_OPTIONS.includes(limit) ? limit : DEFAULT_SESSION_LIMIT
 }
 
 export function normalizedAnswer(value) {

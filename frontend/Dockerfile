@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 
 RUN npm ci
 
-COPY index.html vite.config.js jsconfig.json eslint.config.js ./
+COPY index.html vite.config.js jsconfig.json ./
 COPY .gitignore ./
 
 EXPOSE 5173

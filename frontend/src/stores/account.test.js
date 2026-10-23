@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { createPinia, setActivePinia } from 'pinia'
 import { useAccountStore } from '@/stores/account'
 
 const api = vi.hoisted(() => ({
@@ -15,7 +14,7 @@ vi.mock('@/lib/api', () => ({
 
 describe('account store', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
+    useAccountStore.setState(useAccountStore.getInitialState(), true)
     vi.clearAllMocks()
   })
 
@@ -30,13 +29,12 @@ describe('account store', () => {
       },
     })
 
-    const account = useAccountStore()
-    await account.refreshSession()
+    await useAccountStore.getState().refreshSession()
 
     expect(api.get).toHaveBeenCalledWith('/accounts/session')
-    expect(account.hasLoaded).toBe(true)
-    expect(account.selectedLanguagePairSlug).toBe('deu-eng')
-    expect(account.initials).toBe('AL')
+    expect(useAccountStore.getState().hasLoaded).toBe(true)
+    expect(useAccountStore.getState().selectedLanguagePairSlug).toBe('deu-eng')
+    expect(useAccountStore.getState().initials).toBe('AL')
   })
 
   it('logs in and logs out', async () => {
@@ -50,19 +48,18 @@ describe('account store', () => {
     })
     api.delete.mockResolvedValueOnce({})
 
-    const account = useAccountStore()
-    await account.login({ email: 'ada@example.com', password: 'secret' })
+    await useAccountStore.getState().login({ email: 'ada@example.com', password: 'secret' })
 
     expect(api.post).toHaveBeenCalledWith('/accounts/session', {
       email: 'ada@example.com',
       password: 'secret',
     })
-    expect(account.user.name).toBe('Ada')
+    expect(useAccountStore.getState().user.name).toBe('Ada')
 
-    await account.logout()
+    await useAccountStore.getState().logout()
 
     expect(api.delete).toHaveBeenCalledWith('/accounts/session')
-    expect(account.user).toBeNull()
+    expect(useAccountStore.getState().user).toBeNull()
   })
 
   it('updates the selected language pair through the profile endpoint', async () => {
@@ -75,12 +72,11 @@ describe('account store', () => {
       },
     })
 
-    const account = useAccountStore()
-    await account.updateSelectedLanguagePair('spa-eng')
+    await useAccountStore.getState().updateSelectedLanguagePair('spa-eng')
 
     expect(api.patch).toHaveBeenCalledWith('/users/me', {
       selectedLanguagePairSlug: 'spa-eng',
     })
-    expect(account.selectedLanguagePairSlug).toBe('spa-eng')
+    expect(useAccountStore.getState().selectedLanguagePairSlug).toBe('spa-eng')
   })
 })

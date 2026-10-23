@@ -1,8 +1,8 @@
 import { fileURLToPath, URL } from 'node:url'
 
 import { configDefaults, defineConfig, lazyPlugins } from 'vite-plus'
-import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://viteplus.dev/config/
 export default defineConfig({
@@ -12,7 +12,7 @@ export default defineConfig({
     root: fileURLToPath(new URL('./', import.meta.url)),
   },
   lint: {
-    plugins: ['eslint', 'unicorn', 'oxc', 'vue', 'vitest'],
+    plugins: ['eslint', 'unicorn', 'oxc', 'react', 'react-hooks', 'vitest'],
     categories: {
       correctness: 'error',
     },
@@ -41,13 +41,6 @@ export default defineConfig({
       'vite-plus/prefer-vite-plus-imports': 'error',
     },
     overrides: [
-      {
-        files: ['**/*.vue'],
-        globals: {
-          defineProps: 'readonly',
-          defineEmits: 'readonly',
-        },
-      },
       {
         files: ['src/**/__tests__/*'],
         rules: {
@@ -89,7 +82,7 @@ export default defineConfig({
     sortPackageJson: false,
     ignorePatterns: [],
   },
-  plugins: lazyPlugins(() => [vue(), vueDevTools()]),
+  plugins: lazyPlugins(() => [react(), tailwindcss()]),
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

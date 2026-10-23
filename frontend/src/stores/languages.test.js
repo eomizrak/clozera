@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
-import { createPinia, setActivePinia } from 'pinia'
 import { useLanguagesStore } from '@/stores/languages'
 
 const api = vi.hoisted(() => ({
@@ -12,7 +11,7 @@ vi.mock('@/lib/api', () => ({
 
 describe('languages store', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
+    useLanguagesStore.setState(useLanguagesStore.getInitialState(), true)
     vi.clearAllMocks()
   })
 
@@ -25,12 +24,11 @@ describe('languages store', () => {
         },
       })
 
-    const languages = useLanguagesStore()
-    await languages.loadLanguages()
+    await useLanguagesStore.getState().loadLanguages()
 
     expect(api.get).toHaveBeenNthCalledWith(1, '/languages')
     expect(api.get).toHaveBeenNthCalledWith(2, '/language-pairs')
-    expect(languages.pairOptions).toEqual([
+    expect(useLanguagesStore.getState().pairOptions).toEqual([
       {
         label: 'German from English',
         value: 'deu-eng',

@@ -1,137 +1,75 @@
-import { computed, ref } from 'vue'
-import { defineStore } from 'pinia'
+import { create } from 'zustand'
 import api from '@/lib/api'
+import { apiErrorMessage } from '@/lib/api-error'
 
-function apiErrorMessage(error, fallback) {
-  return (
-    error?.response?.data?.error?.message ||
-    error?.response?.data?.message ||
-    error?.message ||
-    fallback
-  )
-}
-
-export const useAccountStore = defineStore('account', () => {
-  const user = ref(null)
-  const hasLoaded = ref(false)
-  const isLoading = ref(false)
-  const error = ref('')
-
-  const isAuthenticated = computed(() => Boolean(user.value))
-  const selectedLanguagePairSlug = computed(() => user.value?.selectedLanguagePair?.slug || '')
-  const initials = computed(() => {
-    const label = user.value?.name || user.value?.username || user.value?.email || 'C'
-    return label
+function userState(user) {
+  const label = user?.name || user?.username || user?.email || 'C'
+  return {
+    user,
+    isAuthenticated: Boolean(user),
+    selectedLanguagePairSlug: user?.selectedLanguagePair?.slug || '',
+    initials: label
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase())
-      .join('')
-  })
-
-  function setUser(nextUser) {
-    user.value = nextUser
+      .map((part) => part[0].toUpperCase())
+      .join(''),
   }
+}
 
-  async function refreshSession() {
-    isLoading.value = true
-    error.value = ''
-
+export const useAccountStore = create((set, get) => {
+  async function request(method, path, payload, fallback) {
+    set({ isLoading: true, error: '' })
     try {
-      const response = await api.get('/accounts/session')
-      user.value = response.data.data
-      return user.value
-    } catch (sessionError) {
-      user.value = null
-      error.value = apiErrorMessage(sessionError, 'Unable to restore your session.')
-      return null
+      const { data } = await (payload === undefined
+        ? api[method](path)
+        : api[method](path, payload))
+      set({ ...userState(data.data), hasLoaded: true })
+      return data.data
+    } catch (error) {
+      set({ error: apiErrorMessage(error, fallback) })
+      throw error
     } finally {
-      hasLoaded.value = true
-      isLoading.value = false
+      set({ isLoading: false })
     }
   }
-
-  async function login(credentials) {
-    isLoading.value = true
-    error.value = ''
-
-    try {
-      const response = await api.post('/accounts/session', credentials)
-      user.value = response.data.data
-      hasLoaded.value = true
-      return user.value
-    } catch (loginError) {
-      error.value = apiErrorMessage(loginError, 'Invalid email or password.')
-      throw loginError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function signUp(payload) {
-    isLoading.value = true
-    error.value = ''
-
-    try {
-      const response = await api.post('/users', payload)
-      user.value = response.data.data
-      hasLoaded.value = true
-      return user.value
-    } catch (signUpError) {
-      error.value = apiErrorMessage(signUpError, 'Unable to create your account.')
-      throw signUpError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function updateProfile(payload) {
-    isLoading.value = true
-    error.value = ''
-
-    try {
-      const response = await api.patch('/users/me', payload)
-      user.value = response.data.data
-      return user.value
-    } catch (profileError) {
-      error.value = apiErrorMessage(profileError, 'Unable to update your profile.')
-      throw profileError
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function updateSelectedLanguagePair(nextSlug) {
-    return updateProfile({ selectedLanguagePairSlug: nextSlug })
-  }
-
-  async function logout() {
-    isLoading.value = true
-    error.value = ''
-
-    try {
-      await api.delete('/accounts/session')
-    } finally {
-      user.value = null
-      hasLoaded.value = true
-      isLoading.value = false
-    }
-  }
-
+  let sessionRequest
   return {
-    error,
-    hasLoaded,
-    initials,
-    isAuthenticated,
-    isLoading,
-    login,
-    logout,
-    refreshSession,
-    selectedLanguagePairSlug,
-    setUser,
-    signUp,
-    updateProfile,
-    updateSelectedLanguagePair,
-    user,
+    ...userState(null),
+    hasLoaded: false,
+    isLoading: false,
+    error: '',
+    setUser: (user) => set(userState(user)),
+    refreshSession() {
+      if (sessionRequest) return sessionRequest
+      sessionRequest = request(
+        'get',
+        '/accounts/session',
+        undefined,
+        'Unable to restore your session.',
+      )
+        .catch(() => {
+          set(userState(null))
+          return null
+        })
+        .finally(() => {
+          set({ hasLoaded: true })
+          sessionRequest = null
+        })
+      return sessionRequest
+    },
+    login: (payload) => request('post', '/accounts/session', payload, 'Invalid email or password.'),
+    signUp: (payload) => request('post', '/users', payload, 'Unable to create your account.'),
+    updateProfile: (payload) =>
+      request('patch', '/users/me', payload, 'Unable to update your profile.'),
+    updateSelectedLanguagePair: (slug) => get().updateProfile({ selectedLanguagePairSlug: slug }),
+    async logout() {
+      set({ isLoading: true, error: '' })
+      try {
+        await api.delete('/accounts/session')
+      } finally {
+        set({ ...userState(null), hasLoaded: true, isLoading: false })
+      }
+    },
   }
 })
